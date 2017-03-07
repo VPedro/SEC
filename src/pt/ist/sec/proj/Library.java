@@ -1,5 +1,6 @@
 package pt.ist.sec.proj;
 
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -27,13 +28,15 @@ public class Library {
 
 		//start socket
 		String serverName = "";
-		int serverPort = 80;
+		int serverPort = 85;
 		try {
 			Socket client = new Socket(serverName, serverPort);
 			
 			OutputStream outToServer = client.getOutputStream();
 			DataOutputStream out = new DataOutputStream(outToServer);
 			out.writeUTF("Hello");
+			DataInputStream in = new DataInputStream(client.getInputStream());
+			System.out.println(in.readUTF());
 			
 		} catch (UnknownHostException e) {
 			// TODO Auto-generated catch block
