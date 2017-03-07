@@ -52,6 +52,7 @@ public class Client {
 					break;
 				case 5:
 					l.close();
+					System.exit(0);
 			}
 		}
 	}
