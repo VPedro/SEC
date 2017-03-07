@@ -4,21 +4,21 @@ import java.io.Serializable;
 
 public class Message implements Serializable{
 
-	private byte[] functionName;
+	private String functionName;
 	private byte[] domain;
 	private byte[] username;
 	private byte[] password;
 	
-	public Message(byte[] functionName, byte[] domain, byte[] username, byte[] password) {
+	public Message(String functionName, byte[] domain, byte[] username, byte[] password) {
 		this.functionName = functionName;
 		this.domain = domain;
 		this.username = username;
 		this.password = password;
 	}
-	public byte[] getFunctionName() {
+	public String getFunctionName() {
 		return functionName;
 	}
-	public void setFunctionName(byte[] functionName) {
+	public void setFunctionName(String functionName) {
 		this.functionName = functionName;
 	}
 	public byte[] getDomain() {

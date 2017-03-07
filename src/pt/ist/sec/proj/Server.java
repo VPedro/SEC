@@ -44,6 +44,7 @@ public class Server {
 			//System.out.println(in.readUTF());
             //out.writeUTF("Goodbye!");
 			ObjectInputStream objIn = new ObjectInputStream(server.getInputStream());
+			ObjectOutputStream objOut = new ObjectOutputStream(server.getOutputStream());
            // while(true){
             	try {
 					Message m = (Message)objIn.readObject();
@@ -54,7 +55,10 @@ public class Server {
 					}
 					else if(m.getFunctionName().equals("retrieve_password")){
 						System.out.println("Retrieve_password received: " + new String(m.getDomain()) + ", " + new String(m.getUsername()));
-						out.writeUTF("Retrieving password... " + get(m.getDomain(), m.getUsername())); 
+						byte[] pass = get(m.getDomain(), m.getUsername());
+						out.writeUTF("Retrieving password... " + new String(pass)); 
+						Message m2 = new Message(null, null, null, pass);
+						objOut.writeObject(m2);
 					}
 				} catch (ClassNotFoundException e) {
 					e.printStackTrace();
