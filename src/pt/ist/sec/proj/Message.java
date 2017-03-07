@@ -7,6 +7,12 @@ public class Message {
 	private String username;
 	private String password;
 	
+	public Message(String functionName, String domain, String username, String password) {
+		this.functionName = functionName;
+		this.domain = domain;
+		this.username = username;
+		this.password = password;
+	}
 	public String getFunctionName() {
 		return functionName;
 	}

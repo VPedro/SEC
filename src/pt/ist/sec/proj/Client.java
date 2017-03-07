@@ -1,5 +1,6 @@
 package pt.ist.sec.proj;
 
+import java.io.IOException;
 import java.security.*;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -12,7 +13,11 @@ public class Client {
 		
 		Library l = new Library();
 		
-		l.init(null);
+		try {
+			l.save_password("MyDomain", "MyUsername", "MyPassword");
+		} catch(IOException e) {
+			System.out.println("Exception: IOException!");
+		}
 	}
 	
 }

@@ -3,6 +3,7 @@ package pt.ist.sec.proj;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.net.UnknownHostException;
@@ -12,14 +13,14 @@ import java.security.KeyStore;
 public class Library {
 
 	/*************************************** CLIENT ***************************************/
-	
+	private Socket client;
 	public void init(KeyStore keystore){
 
 		//start socket
 		String serverName = "";
 		int serverPort = 85;
 		try {
-			Socket client = new Socket(serverName, serverPort);
+			client = new Socket(serverName, serverPort);
 			
 			OutputStream outToServer = client.getOutputStream();
 			DataOutputStream out = new DataOutputStream(outToServer);
@@ -47,12 +48,19 @@ public class Library {
 		 * required  data structures to securely store the password
 		 */
 	}
-	
+/*	
 	public void save_password(byte[] domain, byte[] username, byte[] password){
 		/* stores  the  triple  (domain, username, password)  on  the  server. 
 		 * This corresponds	to an insertion	if the (domain,	username) pair is 
 		 * not already known by the server, or to an update otherwise. 
-		 */
+
+	}
+*/
+
+	public void save_password(String domain, String username, String password) throws IOException {
+		Message msg = new Message("save_password", domain, username, password);
+		ObjectOutputStream output = new ObjectOutputStream(client.getOutputStream());
+		output.writeObject(msg);
 	}
 	
 	public byte[] retrieve_password(byte[] domain, byte[] username){
