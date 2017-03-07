@@ -1,5 +1,10 @@
 package pt.ist.sec.proj;
 
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.Socket;
+import java.net.UnknownHostException;
 import java.security.Key;
 import java.security.KeyStore;
 
@@ -19,6 +24,25 @@ public class Library {
 		 * commands issued at the client side, until a close()
 		 * function is called
 		 */
+
+		//start socket
+		String serverName = "";
+		int serverPort = 80;
+		try {
+			Socket client = new Socket(serverName, serverPort);
+			
+			OutputStream outToServer = client.getOutputStream();
+			DataOutputStream out = new DataOutputStream(outToServer);
+			out.writeUTF("Hello");
+			
+		} catch (UnknownHostException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
 	}
 	
 	public void register_user(){
