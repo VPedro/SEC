@@ -38,7 +38,7 @@ public class Client {
 					input = s.nextLine();
 					spl = input.split(" ");
 					try {
-						l.save_password(spl[0], spl[1], spl[2]);
+						l.save_password(spl[0].getBytes(), spl[1].getBytes(), spl[2].getBytes());
 					} catch (IOException e) {
 						e.printStackTrace();
 					}
@@ -48,7 +48,7 @@ public class Client {
 					s.nextLine();
 					input = s.nextLine();
 					spl = input.split(" ");
-					l.retrieve_password(spl[0], spl[1]);
+					l.retrieve_password(spl[0].getBytes(), spl[1].getBytes());
 					break;
 				case 5:
 					l.close();
