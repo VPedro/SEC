@@ -21,13 +21,13 @@ public class Library {
 		int serverPort = 85;
 		try {
 			client = new Socket(serverName, serverPort);
-			
+			/*
 			OutputStream outToServer = client.getOutputStream();
 			DataOutputStream out = new DataOutputStream(outToServer);
 			out.writeUTF("Hello");
 			DataInputStream in = new DataInputStream(client.getInputStream());
 			System.out.println(in.readUTF());
-			
+			*/
 		} catch (UnknownHostException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

@@ -13,6 +13,7 @@ public class Client {
 		
 		Library l = new Library();
 		
+		l.init(null);
 		try {
 			l.save_password("MyDomain", "MyUsername", "MyPassword");
 		} catch(IOException e) {
