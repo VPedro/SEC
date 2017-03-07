@@ -4,39 +4,39 @@ import java.io.Serializable;
 
 public class Message implements Serializable{
 
-	private String functionName;
-	private String domain;
-	private String username;
-	private String password;
+	private byte[] functionName;
+	private byte[] domain;
+	private byte[] username;
+	private byte[] password;
 	
-	public Message(String functionName, String domain, String username, String password) {
+	public Message(byte[] functionName, byte[] domain, byte[] username, byte[] password) {
 		this.functionName = functionName;
 		this.domain = domain;
 		this.username = username;
 		this.password = password;
 	}
-	public String getFunctionName() {
+	public byte[] getFunctionName() {
 		return functionName;
 	}
-	public void setFunctionName(String functionName) {
+	public void setFunctionName(byte[] functionName) {
 		this.functionName = functionName;
 	}
-	public String getDomain() {
+	public byte[] getDomain() {
 		return domain;
 	}
-	public void setDomain(String domain) {
+	public void setDomain(byte[] domain) {
 		this.domain = domain;
 	}
-	public String getUsername() {
+	public byte[] getUsername() {
 		return username;
 	}
-	public void setUsername(String username) {
+	public void setUsername(byte[] username) {
 		this.username = username;
 	}
-	public String getPassword() {
+	public byte[] getPassword() {
 		return password;
 	}
-	public void setPassword(String password) {
+	public void setPassword(byte[] password) {
 		this.password = password;
 	}
 	

@@ -17,22 +17,22 @@ import javax.crypto.*;
 public class Server {
 
 	private static ServerSocket serverSocket;
-	private static Map<ArrayList<String>, String> map;
+	private static Map<ArrayList<byte[]>, byte[]> map;
 	
-	public static void	put(String domain, String username, String password){ 
-		ArrayList<String> list = new ArrayList<String>(); list.add(domain); list.add(username);
+	public static void put(byte[] domain, byte[] username, byte[] password){ 
+		ArrayList<byte[]> list = new ArrayList<byte[]>(); list.add(domain); list.add(username);
 		map.put(list, password);
 	}
 	
-	public static String get(String domain, String username){
-		ArrayList<String> list = new ArrayList<String>(); list.add(domain); list.add(username);
+	public static byte[] get(byte[] domain, byte[] username){
+		ArrayList<byte[]> list = new ArrayList<byte[]>(); list.add(domain); list.add(username);
 		return map.get(list);
 	}
 	
 	
 	
 	public static void main(String args[]){
-		map = new HashMap<ArrayList<String>, String>();
+		map = new HashMap<ArrayList<byte[]>, byte[]>();
 		
 		System.out.println("SERVER STARTING");
 		try {
@@ -48,12 +48,12 @@ public class Server {
             	try {
 					Message m = (Message)objIn.readObject();
 					if(m.getFunctionName().equals("save_password")){
-						System.out.println("Save_password received: " + m.getDomain() + ", " + m.getUsername() + ", " + m.getPassword());
+						System.out.println("Save_password received: " + new String(m.getDomain()) + ", " + new String(m.getUsername()) + ", " + new String(m.getPassword()));
 						put(m.getDomain(), m.getUsername(), m.getPassword());
 						out.writeUTF("Password saved!");
 					}
 					else if(m.getFunctionName().equals("retrieve_password")){
-						System.out.println("Retrieve_password received: " + m.getDomain() + ", " + m.getUsername());
+						System.out.println("Retrieve_password received: " + new String(m.getDomain()) + ", " + new String(m.getUsername()));
 						out.writeUTF("Retrieving password... " + get(m.getDomain(), m.getUsername())); 
 					}
 				} catch (ClassNotFoundException e) {
