@@ -14,17 +14,6 @@ public class Library {
 	/*************************************** CLIENT ***************************************/
 	
 	public void init(KeyStore keystore){
-		/* initializes  the  library  before its  first	use. This  
-		 * method should receive a reference to a  key store that 
-		 * must	contain the private and public key of  the  user,
-		 * as  well  as  any  other  parameters  needed  to  access
-		 * this  key  store	(e.g., its password) and to correctly 
-		 * initialize the cryptographic primitives used at the 
-		 * client side. These keys maintained by the key store
-		 * will	be the ones	used in	the	following session of 
-		 * commands issued at the client side, until a close()
-		 * function is called
-		 */
 
 		//start socket
 		String serverName = "";
@@ -46,6 +35,11 @@ public class Library {
 			e.printStackTrace();
 		}
 		
+	}
+	
+	public void test(byte[] array){
+		String cona = new String(array);
+		System.out.println(cona);
 	}
 	
 	public void register_user(){

@@ -8,6 +8,11 @@ public class Client {
 		System.out.println("CLIENT START");
 		Library l = new Library();
 		l.init(null);
+		
+		byte[] byteArray; 
+		String savePW = "MyPassword";
+		byteArray = savePW.getBytes();
+		l.test(byteArray);
 	}
 	
 }
