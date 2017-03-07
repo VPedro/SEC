@@ -39,29 +39,27 @@ public class Server {
 			serverSocket = new ServerSocket(85);
 			Socket server = serverSocket.accept();
 			
-			DataInputStream in = new DataInputStream(server.getInputStream());
-            
-            System.out.println(in.readUTF());
-            DataOutputStream out = new DataOutputStream(server.getOutputStream());
-            out.writeUTF("Goodbye!");
-            
-            while(true){
-            	ObjectInputStream objIn = new ObjectInputStream(server.getInputStream());
+			//DataInputStream in = new DataInputStream(server.getInputStream());
+			DataOutputStream out = new DataOutputStream(server.getOutputStream());
+			//System.out.println(in.readUTF());
+            //out.writeUTF("Goodbye!");
+			ObjectInputStream objIn = new ObjectInputStream(server.getInputStream());
+           // while(true){
             	try {
 					Message m = (Message)objIn.readObject();
-					switch(m.getFunctionName()) {
-						case "save_password":
-							put(m.getDomain(), m.getUsername(), m.getPassword());
-							out.writeUTF("Password saved!");
-							break;
-						case "retrieve_password":
-							out.writeUTF("Retrieving password");
-							out.writeUTF(get(m.getDomain(), m.getUsername()));			
+					if(m.getFunctionName().equals("save_password")){
+						System.out.println("Save_password received: " + m.getDomain() + ", " + m.getUsername() + ", " + m.getPassword());
+						put(m.getDomain(), m.getUsername(), m.getPassword());
+						out.writeUTF("Password saved!");
+					}
+					else if(m.getFunctionName().equals("retrieve_password")){
+						System.out.println("Retrieve_password received: " + m.getDomain() + ", " + m.getUsername());
+						out.writeUTF("Retrieving password... " + get(m.getDomain(), m.getUsername())); 
 					}
 				} catch (ClassNotFoundException e) {
 					e.printStackTrace();
 				}
-            }
+           // }
             
             
             //server.close();

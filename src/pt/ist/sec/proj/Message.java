@@ -1,6 +1,8 @@
 package pt.ist.sec.proj;
 
-public class Message {
+import java.io.Serializable;
+
+public class Message implements Serializable{
 
 	private String functionName;
 	private String domain;

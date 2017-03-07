@@ -61,9 +61,11 @@ public class Library {
 		Message msg = new Message("save_password", domain, username, password);
 		ObjectOutputStream output = new ObjectOutputStream(client.getOutputStream());
 		output.writeObject(msg);
+		DataInputStream in = new DataInputStream(client.getInputStream());
+		System.out.println(in.readUTF());
 	}
 	
-	public byte[] retrieve_password(byte[] domain, byte[] username){
+	public String retrieve_password(String domain, String username){
 		/* retrieves the password associated with the given (domain,username) 
 		 * pair. The behavior of what should happen if the (domain, username) 
 		 * pair does not exist is unspecified. 
@@ -73,6 +75,11 @@ public class Library {
 	
 	public void close(){
 		/* concludes the current session of commands with the client library */
+		try {
+			client.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 	
 	/*************************************** SERVER ***************************************/
