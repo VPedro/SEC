@@ -10,6 +10,8 @@ import java.util.Scanner;
 public class Client {
 
 	public static void main(String args[]){
+		KeyStore ks = getKeyStore();
+		
 		Library l = new Library();
 		
 		
@@ -38,6 +40,9 @@ public class Client {
 					input = s.nextLine();
 					spl = input.split(" ");
 					try {
+						System.out.println(spl[0].getBytes());
+						System.out.println(spl[1].getBytes());
+						System.out.println(spl[2].getBytes());
 						l.save_password(spl[0].getBytes(), spl[1].getBytes(), spl[2].getBytes());
 					} catch (IOException e) {
 						e.printStackTrace();
@@ -55,5 +60,25 @@ public class Client {
 					System.exit(0);
 			}
 		}
+	}
+
+	private static KeyStore getKeyStore() {
+		KeyStore ks;
+		try {
+			ks = KeyStore.getInstance("JKS");
+			
+			//if exists verify pass and retrieve
+			if(true){
+				return ks;
+			}
+			else{
+				return ks;
+			}
+		} catch (KeyStoreException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return null;
+
 	}
 }
