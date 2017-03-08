@@ -15,7 +15,10 @@ public class Library {
 
 	/*************************************** CLIENT ***************************************/
 	private Socket client;
-	public void init(KeyStore keystore){
+
+	public void init(KeyStore keystore, String password){
+		
+		KeyStore ks = getKeyStore(password);
 
 		//start socket
 		String serverName = "";
@@ -39,6 +42,16 @@ public class Library {
 		
 	}
 	
+	private KeyStore getKeyStore(String password) {
+		if(true){
+			System.out.println("keyStore loaded");
+		}
+		else{
+			System.out.println("keyStore created");
+		}
+		return null;
+	}
+
 	public void test(byte[] array){
 		String cona = new String(array);
 		System.out.println(cona);

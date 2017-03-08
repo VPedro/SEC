@@ -10,6 +10,7 @@ import java.util.Scanner;
 public class Client {
 
 	public static void main(String args[]){
+
 		Library l = new Library();
 		
 		
@@ -27,7 +28,10 @@ public class Client {
 			option = s.nextInt();
 			switch(option){
 				case 1:
-					l.init(null);
+					System.out.println("Enter your KeyStore password");
+					s.nextLine();
+					input = s.nextLine();
+					l.init(null, input);
 					break;
 				case 2:
 					l.register(null);
