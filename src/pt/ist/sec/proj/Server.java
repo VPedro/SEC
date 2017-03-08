@@ -36,7 +36,7 @@ public class Server {
 		
 		System.out.println("SERVER STARTING");
 		try {
-			serverSocket = new ServerSocket(85);
+			serverSocket = new ServerSocket(1025);
 			Socket server = serverSocket.accept();
 			
 			//DataInputStream in = new DataInputStream(server.getInputStream());

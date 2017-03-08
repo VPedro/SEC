@@ -19,7 +19,7 @@ public class Library {
 
 		//start socket
 		String serverName = "";
-		int serverPort = 85;
+		int serverPort = 1025;
 		try {
 			client = new Socket(serverName, serverPort);
 			/*
