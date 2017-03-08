@@ -15,8 +15,6 @@ public class Library {
 
 	/*************************************** CLIENT ***************************************/
 	private Socket client;
-	
-
 	public void init(KeyStore keystore){
 
 		//start socket
@@ -62,7 +60,7 @@ public class Library {
 		ObjectOutputStream output = new ObjectOutputStream(client.getOutputStream());
 		output.writeObject(msg);
 		DataInputStream in = new DataInputStream(client.getInputStream());
-		System.out.println("result from server "+in.readBoolean());
+		System.out.println(in.readUTF());
 	}
 	
 	public byte[] retrieve_password(byte[] domain, byte[] username){

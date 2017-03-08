@@ -11,7 +11,6 @@ import java.security.Key;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Scanner;
 
 import javax.crypto.*;
 
@@ -37,7 +36,6 @@ public class Server {
 		
 		System.out.println("SERVER STARTING");
 		try {
-			//only root can use ports bellow 1024
 			serverSocket = new ServerSocket(85);
 			Socket server = serverSocket.accept();
 			
@@ -53,8 +51,7 @@ public class Server {
 					if(m.getFunctionName().equals("save_password")){
 						System.out.println("Save_password received: " + new String(m.getDomain()) + ", " + new String(m.getUsername()) + ", " + new String(m.getPassword()));
 						put(m.getDomain(), m.getUsername(), m.getPassword());
-						//out.writeUTF("Password saved!");
-						out.writeBoolean(true);
+						out.writeUTF("Password saved!");
 					}
 					else if(m.getFunctionName().equals("retrieve_password")){
 						System.out.println("Retrieve_password received: " + new String(m.getDomain()) + ", " + new String(m.getUsername()));
