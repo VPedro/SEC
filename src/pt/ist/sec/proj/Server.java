@@ -51,7 +51,7 @@ public class Server {
 					if(m.getFunctionName().equals("save_password")){
 						System.out.println("Save_password received: " + new String(m.getDomain()) + ", " + new String(m.getUsername()) + ", " + new String(m.getPassword()));
 						put(m.getDomain(), m.getUsername(), m.getPassword());
-						out.writeUTF("Password saved!");
+						out.writeBoolean(true);
 					}
 					else if(m.getFunctionName().equals("retrieve_password")){
 						System.out.println("Retrieve_password received: " + new String(m.getDomain()) + ", " + new String(m.getUsername()));
