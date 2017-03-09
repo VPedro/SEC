@@ -15,6 +15,11 @@ public class Library {
 
 	/*************************************** CLIENT ***************************************/
 	private Socket client;
+	ObjectOutputStream outObject;
+	ObjectInputStream inObject;
+	DataOutputStream outData;
+	DataInputStream inData;
+
 	public void init(KeyStore keystore){
 
 		//start socket
@@ -22,6 +27,11 @@ public class Library {
 		int serverPort = 1025;
 		try {
 			client = new Socket(serverName, serverPort);
+			outObject = new ObjectOutputStream(client.getOutputStream());
+			inObject = new ObjectInputStream(client.getInputStream());
+			outData = new DataOutputStream(client.getOutputStream());
+			inData = new DataInputStream(client.getInputStream());
+			
 			/*
 			OutputStream outToServer = client.getOutputStream();
 			DataOutputStream out = new DataOutputStream(outToServer);
@@ -38,11 +48,7 @@ public class Library {
 		}
 		
 	}
-	
-	public void test(byte[] array){
-		String cona = new String(array);
-		System.out.println(cona);
-	}
+
 	
 	public void register_user(){
 		/* registers  the  user  on  the  server,  initializing the  
@@ -57,10 +63,8 @@ public class Library {
 		*/
 		
 		Message msg = new Message("save_password", domain, username, password);
-		ObjectOutputStream output = new ObjectOutputStream(client.getOutputStream());
-		output.writeObject(msg);
-		DataInputStream in = new DataInputStream(client.getInputStream());
-		System.out.println(in.readUTF());
+		outObject.writeObject(msg);
+		System.out.println("result from server " + inData.readBoolean());
 	}
 	
 	public byte[] retrieve_password(byte[] domain, byte[] username){
@@ -70,16 +74,15 @@ public class Library {
 		 */
 		
 		Message msg = new Message("retrieve_password", domain, username, null);
-		ObjectOutputStream output;
-		ObjectInputStream input = null;
+
 		Message m = null;
 		try {
-			output = new ObjectOutputStream(client.getOutputStream());
-			output.writeObject(msg);
-			DataInputStream in = new DataInputStream(client.getInputStream());
-			System.out.println(in.readUTF());
-			input = new ObjectInputStream(client.getInputStream());	
-			m = (Message)input.readObject();
+			outObject.writeObject(msg);
+			System.out.println("RECEBI1");
+			System.out.println(inData.readBoolean());
+			System.out.println("RECEBI2");
+			m = (Message)inObject.readObject();
+			System.out.println("RECEBI3");
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
