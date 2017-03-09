@@ -2,9 +2,11 @@ package pt.ist.sec.proj;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.security.Key;
@@ -19,22 +21,23 @@ import javax.crypto.*;
 public class Server {
 
 	private ServerSocket serverSocket;
-	private Map<ArrayList<byte[]>, byte[]> map;
-	
-	public void printMap(){
-		for(ArrayList<byte[]> a : this.map.keySet()){
-			System.out.println(a.get(0) + ", " + a.get(1) + " = " + get(a.get(0), a.get(1)));		
-		}
-	}
+	private Map<ArrayList<String>, String> map;
+	private Crypto crypto;
 	
 	public void put(byte[] domain, byte[] username, byte[] password){ 
-		ArrayList<byte[]> list = new ArrayList<byte[]>(); list.add(domain); list.add(username);
-		map.put(list, password);
+		ArrayList<String> list = new ArrayList<String>(); list.add(crypto.base64encode(domain)); list.add(crypto.base64encode(username));
+		map.put(list, crypto.base64encode(password));
 	}
 	
-	public byte[] get(byte[] domain, byte[] username){
-		ArrayList<byte[]> list = new ArrayList<byte[]>(); list.add(domain); list.add(username);
-		return map.get(list);
+	public byte[] get(byte[] domain, byte[] username) throws UnsupportedEncodingException{
+		ArrayList<String> list = new ArrayList<String>(); list.add(crypto.base64encode(domain)); list.add(crypto.base64encode(username));
+		String password_retrieved = map.get(list);
+		if(password_retrieved != null){
+			return crypto.base64decode(password_retrieved);
+		}
+		else {
+			return null;
+		}
 	}
 	
 	
@@ -42,9 +45,10 @@ public class Server {
 	public static void main(String args[]){
 		
 		Server server = new Server();
-		server.map = new HashMap<ArrayList<byte[]>, byte[]>();
+		server.crypto = new Crypto();
+		server.map = new HashMap<ArrayList<String>, String>();
 		
-		System.out.println("SERVER STARTING");
+		System.out.println("===== Server Started =====");
 		try {
 			server.serverSocket = new ServerSocket(1025);
 			Socket serverClient = server.serverSocket.accept();
@@ -55,35 +59,27 @@ public class Server {
             //out.writeUTF("Goodbye!");
 			ObjectInputStream objIn = new ObjectInputStream(serverClient.getInputStream());
 			ObjectOutputStream objOut = new ObjectOutputStream(serverClient.getOutputStream());
-            while(true){
+            while(serverClient.getInputStream().read() != -1){ //FILTHY HACK, GARBAGE, FIX THIS PLZ
             	try {
 					Message m = (Message)objIn.readObject();
 					if(m.getFunctionName().equals("save_password")){
-						System.out.println("Save_password received: " + Arrays.toString(m.getDomain()) + ", " + Arrays.toString(m.getUsername()) + ", " + Arrays.toString(m.getPassword()));
+						System.out.println("Save_password received.");
 						server.put(m.getDomain(), m.getUsername(), m.getPassword());
 						//out.writeUTF("Password saved!");
-						out.writeBoolean(true);
 					}
 					else if(m.getFunctionName().equals("retrieve_password")){
-						System.out.println("Retrieve_password received: " + Arrays.toString(m.getDomain()) + ", " + Arrays.toString(m.getUsername()));
+						System.out.println("Retrieve_password received.");
 						byte[] pass = server.get(m.getDomain(), m.getUsername());
-						System.out.println("BYTEEEE");
-						out.writeBoolean(true);
-						server.printMap();
-						System.out.println(m.getDomain() + " " + m.getUsername());
-						System.out.println(pass);
 						Message m2 = new Message(null, null, null, pass);
-						System.out.println("CENAS");
 						objOut.writeObject(m2);
-						System.out.println("MANDEI");
 					}
 				} catch (ClassNotFoundException e) {
 					e.printStackTrace();
+				} catch (EOFException e) {
+					System.out.println("Connection closed");
 				}
-           }
-            
-            
-            //server.close();
+           }            
+           server.serverSocket.close();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

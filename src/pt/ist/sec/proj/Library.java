@@ -77,7 +77,6 @@ public class Library {
 		
 		Message msg = new Message("save_password", domain, username, password);
 		outObject.writeObject(msg);
-		System.out.println("result from server " + inData.readBoolean());
 	}
 	
 	public byte[] retrieve_password(byte[] domain, byte[] username){
@@ -91,11 +90,7 @@ public class Library {
 		Message m = null;
 		try {
 			outObject.writeObject(msg);
-			System.out.println("RECEBI1");
-			System.out.println(inData.readBoolean());
-			System.out.println("RECEBI2");
 			m = (Message)inObject.readObject();
-			System.out.println("RECEBI3");
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -109,7 +104,7 @@ public class Library {
 	public void close(){
 		/* concludes the current session of commands with the client library */
 		try {
-			client.close();
+			client.close(); 
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
