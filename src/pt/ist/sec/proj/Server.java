@@ -12,7 +12,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Scanner;
 
 import javax.crypto.*;
 
@@ -46,11 +45,9 @@ public class Server {
 		
 		System.out.println("SERVER STARTING");
 		try {
-
 			server.serverSocket = new ServerSocket(1025);
-
 			Socket serverClient = server.serverSocket.accept();
-			
+	
 			//DataInputStream in = new DataInputStream(server.getInputStream());
 			DataOutputStream out = new DataOutputStream(serverClient.getOutputStream());
 			//System.out.println(in.readUTF());

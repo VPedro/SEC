@@ -10,8 +10,7 @@ import java.util.Scanner;
 public class Client {
 
 	public static void main(String args[]){
-		KeyStore ks = getKeyStore();
-		
+
 		Library l = new Library();
 		
 		
@@ -29,7 +28,10 @@ public class Client {
 			option = s.nextInt();
 			switch(option){
 				case 1:
-					l.init(null);
+					System.out.println("Enter your KeyStore password");
+					s.nextLine();
+					input = s.nextLine();
+					l.init(null, input);
 					break;
 				case 2:
 					l.register(null);
@@ -60,25 +62,5 @@ public class Client {
 					System.exit(0);
 			}
 		}
-	}
-
-	private static KeyStore getKeyStore() {
-		KeyStore ks;
-		try {
-			ks = KeyStore.getInstance("JKS");
-			
-			//if exists verify pass and retrieve
-			if(true){
-				return ks;
-			}
-			else{
-				return ks;
-			}
-		} catch (KeyStoreException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		return null;
-
 	}
 }

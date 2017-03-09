@@ -20,7 +20,10 @@ public class Library {
 	DataOutputStream outData;
 	DataInputStream inData;
 
-	public void init(KeyStore keystore){
+
+	public void init(KeyStore keystore, String password){
+		
+		KeyStore ks = getKeyStore(password);
 
 		//start socket
 		String serverName = "";
@@ -47,6 +50,16 @@ public class Library {
 			e.printStackTrace();
 		}
 		
+	}
+
+	private KeyStore getKeyStore(String password) {
+		if(true){
+			System.out.println("keyStore loaded");
+		}
+		else{
+			System.out.println("keyStore created");
+		}
+		return null;
 	}
 
 	
