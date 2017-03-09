@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+import java.util.Base64;
 import javax.crypto.*;
 
 public class Server {
