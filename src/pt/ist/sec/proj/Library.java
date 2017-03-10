@@ -22,9 +22,6 @@ public class Library {
 
 
 	public void init(KeyStore keystore, String password){
-		
-		KeyStore ks = getKeyStore(password);
-
 		//start socket
 		String serverName = "";
 		int serverPort = 1025;
@@ -43,23 +40,10 @@ public class Library {
 			System.out.println(in.readUTF());
 			*/
 		} catch (UnknownHostException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
-	}
-
-	private KeyStore getKeyStore(String password) {
-		if(true){
-			System.out.println("keyStore loaded");
-		}
-		else{
-			System.out.println("keyStore created");
-		}
-		return null;
 	}
 
 	

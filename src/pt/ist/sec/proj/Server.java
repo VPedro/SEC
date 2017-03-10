@@ -25,15 +25,15 @@ public class Server {
 	private Crypto crypto;
 	
 	public void put(byte[] domain, byte[] username, byte[] password){ 
-		ArrayList<String> list = new ArrayList<String>(); list.add(crypto.base64encode(domain)); list.add(crypto.base64encode(username));
-		map.put(list, crypto.base64encode(password));
+		ArrayList<String> list = new ArrayList<String>(); list.add(crypto.encode_base64(domain)); list.add(crypto.encode_base64(username));
+		map.put(list, crypto.encode_base64(password));
 	}
 	
 	public byte[] get(byte[] domain, byte[] username) throws UnsupportedEncodingException{
-		ArrayList<String> list = new ArrayList<String>(); list.add(crypto.base64encode(domain)); list.add(crypto.base64encode(username));
+		ArrayList<String> list = new ArrayList<String>(); list.add(crypto.encode_base64(domain)); list.add(crypto.encode_base64(username));
 		String password_retrieved = map.get(list);
 		if(password_retrieved != null){
-			return crypto.base64decode(password_retrieved);
+			return crypto.decode_base64(password_retrieved);
 		}
 		else {
 			return null;
@@ -59,7 +59,7 @@ public class Server {
             //out.writeUTF("Goodbye!");
 			ObjectInputStream objIn = new ObjectInputStream(serverClient.getInputStream());
 			ObjectOutputStream objOut = new ObjectOutputStream(serverClient.getOutputStream());
-            while(serverClient.getInputStream().read() != -1){ //FILTHY HACK, GARBAGE, FIX THIS PLZ
+            while(true){ //serverClient.getInputStream().read() != -1  => FILTHY HACK, GARBAGE, explodes on save password
             	try {
 					Message m = (Message)objIn.readObject();
 					if(m.getFunctionName().equals("save_password")){
@@ -76,10 +76,10 @@ public class Server {
 				} catch (ClassNotFoundException e) {
 					e.printStackTrace();
 				} catch (EOFException e) {
-					System.out.println("Connection closed");
+					System.out.println("Connection closed"); //FIXME 
 				}
            }            
-           server.serverSocket.close();
+           //server.serverSocket.close();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
