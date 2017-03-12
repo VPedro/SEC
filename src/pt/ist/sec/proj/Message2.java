@@ -3,16 +3,24 @@ package pt.ist.sec.proj;
 import java.io.Serializable;
 import java.security.PublicKey;
 
-public class RegisterMessage implements Serializable{
+public class Message2 implements Serializable{
 
+	private String func;
 	private String res;
 	private PublicKey key;
 	
-	public RegisterMessage(PublicKey key, String res) {
+	public Message2(String func, PublicKey key, String res) {
+		this.func = func;
 		this.key = key;
 		this.res = res;
 	}
 		
+	public String getfunc() {
+		return func;
+	}
+	public void setFunc(String func) {
+		this.func = func;
+	}
 	public String getRes() {
 		return res;
 	}
