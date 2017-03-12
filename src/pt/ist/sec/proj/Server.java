@@ -24,15 +24,18 @@ public class Server {
 	private Map<ArrayList<String>, String> map;
 	private Crypto crypto;
 	
-	public void put(byte[] domain, byte[] username, byte[] password){ 
+	public void put(byte[] domain, byte[] username, byte[] password){
+		System.out.println("put password received");
 		ArrayList<String> list = new ArrayList<String>(); list.add(crypto.encode_base64(domain)); list.add(crypto.encode_base64(username));
 		map.put(list, crypto.encode_base64(password));
+		System.out.println("saved: "+ crypto.encode_base64(password));
 	}
 	
 	public byte[] get(byte[] domain, byte[] username) throws UnsupportedEncodingException{
 		ArrayList<String> list = new ArrayList<String>(); list.add(crypto.encode_base64(domain)); list.add(crypto.encode_base64(username));
 		String password_retrieved = map.get(list);
 		if(password_retrieved != null){
+			System.out.println("decoded pss: "+crypto.decode_base64(password_retrieved));// + crypto.decode_base64(password_retrieved));
 			return crypto.decode_base64(password_retrieved);
 		}
 		else {
@@ -40,6 +43,16 @@ public class Server {
 		}
 	}
 	
+	//FIXME Key publicKey AS INPUT
+	public int register(){
+		System.out.println("register command received");
+		return 0;
+	}
+	
+	public int close(){
+		System.out.println("close command received");
+		return 0;
+	}
 	
 	
 	public static void main(String args[]){
@@ -47,6 +60,8 @@ public class Server {
 		Server server = new Server();
 		server.crypto = new Crypto();
 		server.map = new HashMap<ArrayList<String>, String>();
+		
+		//FIXME save open connection and close them on close message
 		
 		System.out.println("===== Server Started =====");
 		try {
@@ -60,6 +75,7 @@ public class Server {
 			ObjectInputStream objIn = new ObjectInputStream(serverClient.getInputStream());
 			ObjectOutputStream objOut = new ObjectOutputStream(serverClient.getOutputStream());
             while(true){ //serverClient.getInputStream().read() != -1  => FILTHY HACK, GARBAGE, explodes on save password
+            	System.out.println("");
             	try {
 					Message m = (Message)objIn.readObject();
 					if(m.getFunctionName().equals("save_password")){
@@ -73,10 +89,22 @@ public class Server {
 						Message m2 = new Message(null, null, null, pass);
 						objOut.writeObject(m2);
 					}
+					else if(m.getFunctionName().equals("register")){
+						int res = server.register();
+						//Message m2 = new Message(null, null, null, pass);
+						//objOut.writeObject(m2);
+					}
+					else if(m.getFunctionName().equals("close")){
+						int res = server.close();
+						Message m2 = new Message(null, null, null, null);
+						objOut.writeObject(m2);
+					}
 				} catch (ClassNotFoundException e) {
 					e.printStackTrace();
 				} catch (EOFException e) {
-					System.out.println("Connection closed"); //FIXME 
+					e.printStackTrace();
+					System.out.println("EOF Exception"); //FIXME 
+					System.exit(0);
 				}
            }            
            //server.serverSocket.close();

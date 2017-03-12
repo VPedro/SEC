@@ -6,10 +6,14 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
+import java.net.ConnectException;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.security.Key;
 import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
 
 public class Library {
 
@@ -32,6 +36,17 @@ public class Library {
 			outData = new DataOutputStream(client.getOutputStream());
 			inData = new DataInputStream(client.getInputStream());
 			
+			Key key = null;
+			try {
+				key = keystore.getKey("rgateway", password.toCharArray());
+				
+			} catch (UnrecoverableKeyException | KeyStoreException | NoSuchAlgorithmException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				System.out.println("error loading key");
+				
+			}
+			
 			/*
 			OutputStream outToServer = client.getOutputStream();
 			DataOutputStream out = new DataOutputStream(outToServer);
@@ -41,6 +56,8 @@ public class Library {
 			*/
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
+		} catch (ConnectException e1) {
+			System.out.println("error initiating library, no server availible");
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -51,6 +68,19 @@ public class Library {
 		/* registers  the  user  on  the  server,  initializing the  
 		 * required  data structures to securely store the password
 		 */
+		Message msg = new Message("register", null, null, null);
+
+		Message m = null;
+		try {
+			outObject.writeObject(msg);
+			m = (Message)inObject.readObject();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (ClassNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	public void save_password(byte[] domain, byte[] username, byte[] password) throws IOException {
@@ -82,18 +112,36 @@ public class Library {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		
+		//TODO verify signature and decript if valid
 		return m.getPassword();
 	}
 	
 	public void close(){
 		/* concludes the current session of commands with the client library */
 		try {
+			//FIXME enviamos tambem a public key para apagar de um map loggedUsers?
+			Message msg = new Message("close", null, null, null);
+
+			Message m = null;
+			try {
+				outObject.writeObject(msg);
+				m = (Message)inObject.readObject();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (ClassNotFoundException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			//close socket
 			client.close(); 
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
 	
+	//FIXME isto nao devia ser apagado?? estes metodos sao para ser implementados no server
 	/*************************************** SERVER ***************************************/
 	
 	/** Requirements:
