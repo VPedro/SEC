@@ -44,14 +44,14 @@ public class Server {
 	}
 	
 	//FIXME Key publicKey AS INPUT
-	public int register(){
+	public String register(){
 		System.out.println("register command received");
-		return 0;
+		return "Success";
 	}
 	
-	public int close(){
+	public String close(){
 		System.out.println("close command received");
-		return 0;
+		return "Success";
 	}
 	
 	
@@ -69,42 +69,53 @@ public class Server {
 			Socket serverClient = server.serverSocket.accept();
 	
 			//DataInputStream in = new DataInputStream(server.getInputStream());
-			DataOutputStream out = new DataOutputStream(serverClient.getOutputStream());
+			//DataOutputStream out = new DataOutputStream(serverClient.getOutputStream());
 			//System.out.println(in.readUTF());
             //out.writeUTF("Goodbye!");
 			ObjectInputStream objIn = new ObjectInputStream(serverClient.getInputStream());
 			ObjectOutputStream objOut = new ObjectOutputStream(serverClient.getOutputStream());
-            while(true){ //serverClient.getInputStream().read() != -1  => FILTHY HACK, GARBAGE, explodes on save password
+            
+			Object input;
+			while(true){ //serverClient.getInputStream().read() != -1  => FILTHY HACK, GARBAGE, explodes on save password
             	System.out.println("");
             	try {
-					Message m = (Message)objIn.readObject();
-					if(m.getFunctionName().equals("save_password")){
-						System.out.println("Save_password received.");
-						server.put(m.getDomain(), m.getUsername(), m.getPassword());
-						//out.writeUTF("Password saved!");
-					}
-					else if(m.getFunctionName().equals("retrieve_password")){
-						System.out.println("Retrieve_password received.");
-						byte[] pass = server.get(m.getDomain(), m.getUsername());
-						Message m2 = new Message(null, null, null, pass);
-						objOut.writeObject(m2);
-					}
-					else if(m.getFunctionName().equals("register")){
-						int res = server.register();
-						//Message m2 = new Message(null, null, null, pass);
-						//objOut.writeObject(m2);
-					}
-					else if(m.getFunctionName().equals("close")){
-						int res = server.close();
-						Message m2 = new Message(null, null, null, null);
-						objOut.writeObject(m2);
+            		input = objIn.readObject();
+            		//System.out.println("received: " + input);
+            		
+            		if (input instanceof Message) {
+            			Message m = (Message)input;
+            			if(m.getFunctionName().equals("save_password")){
+    						System.out.println("Save_password received.");
+    						server.put(m.getDomain(), m.getUsername(), m.getPassword());
+    						//out.writeUTF("Password saved!");
+    					}
+    					else if(m.getFunctionName().equals("retrieve_password")){
+    						System.out.println("Retrieve_password received.");
+    						byte[] pass = server.get(m.getDomain(), m.getUsername());
+    						Message m2 = new Message(null, null, null, pass);
+    						objOut.writeObject(m2);
+    					}
+            		}else if(input instanceof Message2) {
+            			Message2 m = (Message2)input;
+    					
+    					if(m.getFunc().equals("register")){
+    						String res = server.register();
+    						Message2 m2 = new Message2("register",null,res);
+    						objOut.writeObject(m2);
+    					}
+    					else if(m.getFunc().equals("close")){
+    						String res = server.close();
+    						Message2 m2 = new Message2("close", null, res);
+    						objOut.writeObject(m2);
+    						
+    					}
 					}
 				} catch (ClassNotFoundException e) {
 					e.printStackTrace();
 				} catch (EOFException e) {
-					e.printStackTrace();
-					System.out.println("EOF Exception"); //FIXME 
-					System.exit(0);
+					//e.printStackTrace();
+					System.out.println("EOF"); //FIXME
+					//System.exit(0);
 				}
            }            
            //server.serverSocket.close();

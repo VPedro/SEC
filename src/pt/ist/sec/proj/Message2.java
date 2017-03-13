@@ -15,7 +15,7 @@ public class Message2 implements Serializable{
 		this.res = res;
 	}
 		
-	public String getfunc() {
+	public String getFunc() {
 		return func;
 	}
 	public void setFunc(String func) {

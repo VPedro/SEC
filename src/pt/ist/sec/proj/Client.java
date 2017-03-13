@@ -47,6 +47,7 @@ public class Client {
 			} 
 		} catch (NoSuchAlgorithmException | CertificateException | KeyStoreException e) {
 			e.printStackTrace();
+			ks = null;
 		} catch (IOException e){
 			ks = null;
 		}
@@ -83,11 +84,11 @@ public class Client {
 						System.err.println("wrong password, try again");
 						continue;
 					} //FIXME returns success?
-					l.init(ks, input);
-					initiated =true;
+					if(l.init(ks, input))
+						initiated =true;
 					break;
 				case 2:
-					l.register(null);
+					l.register_user();
 					break;
 				case 3:
 					if(!initiated){
@@ -135,8 +136,13 @@ public class Client {
 					}
 					break;
 				case 5:
+					if(!initiated){
+						System.err.println("you need to call init in order to contact server");
+						continue;
+					}
 					l.close();
 					initiated=false;
+					l=new Library();
 					System.out.println("closed with success");
 					break;
 				default:
