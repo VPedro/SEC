@@ -30,27 +30,14 @@ public class Library {
 		String serverName = "";
 		int serverPort = 1025;
 		try {
-			System.out.println("1");
 			client = new Socket(serverName, serverPort);
-			System.out.println("2");
 			outObject = new ObjectOutputStream(client.getOutputStream());
-			System.out.println("3");
 			inObject = new ObjectInputStream(client.getInputStream());
-			System.out.println("4");
 			outData = new DataOutputStream(client.getOutputStream());
-			System.out.println("5");
 			inData = new DataInputStream(client.getInputStream());
-			System.out.println("6");
 			setKeys(keystore, password);
-			System.out.println("7");
 			return true;
-			/*
-			OutputStream outToServer = client.getOutputStream();
-			DataOutputStream out = new DataOutputStream(outToServer);
-			out.writeUTF("Hello");
-			DataInputStream in = new DataInputStream(client.getInputStream());
-			System.out.println(in.readUTF());
-			*/
+
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
 			return false;
@@ -65,14 +52,12 @@ public class Library {
 
 	
 	private void setKeys(KeyStore ks, String password) {
-		//Open the KeyStore file
-		FileInputStream fis;
 		try {
 			//Get the key with the given alias.
 			String alias="rgateway";
 			
-			PublicKey pubKey = ks.getCertificate(alias).getPublicKey();
-			PrivateKey privKey = (PrivateKey) ks.getKey(alias, password.toCharArray());
+			pubKey = ks.getCertificate(alias).getPublicKey();
+			privKey = (PrivateKey) ks.getKey(alias, password.toCharArray());
 			
 		} catch (Exception e){
 			
@@ -93,10 +78,8 @@ public class Library {
 			resMsg = (Message2)inObject.readObject();
 			System.out.println("result from server: " + resMsg.getRes());
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (ClassNotFoundException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		
@@ -138,6 +121,8 @@ public class Library {
 	
 	public void close(){
 		/* concludes the current session of commands with the client library */
+		
+		//removeKeys
 		
 		//FIXME enviamos tambem a public key para apagar de um map loggedUsers?
 		Message2 msg = new Message2("close", pubKey, null);

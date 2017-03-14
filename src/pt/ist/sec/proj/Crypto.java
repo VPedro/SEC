@@ -47,21 +47,20 @@ public class Crypto {
 	}
 	
 	
-	public byte[] signature_generate(String s, PrivateKey privateKey){
-		byte[] data = s.getBytes();
+	public byte[] signature_generate(byte[] bytes, PrivateKey privateKey){
 		byte[] signature = null;
 		Signature dsaForSign;
 		try {
 			dsaForSign = Signature.getInstance("SHA1withDSA");
 			dsaForSign.initSign(privateKey); 
-			dsaForSign.update(data); 
+			dsaForSign.update(bytes); 
 			signature = dsaForSign.sign();
 		} catch (NoSuchAlgorithmException e) {
 			e.printStackTrace();
 		} catch (InvalidKeyException e) {
 			e.printStackTrace();
 		} catch (SignatureException e) {
-			e.printStackTrace();
+			System.out.println("failed to sign data");
 		}
 		return signature;
 	}
@@ -79,7 +78,7 @@ public class Crypto {
 		} catch (InvalidKeyException e) {
 			e.printStackTrace();
 		} catch (SignatureException e) {
-			e.printStackTrace();
+			System.out.println("Signature verification failed");
 		}
 		return verifies;
 	}
