@@ -122,7 +122,7 @@ public class Library {
 		
 		//TODO verify signature and decript if valid
 		byte[] b = crypto.decrypt(m.getPassword(), privKey);
-		if(b == null){ return null;}
+		if (b == null){ return null;}
 		try {
 			return new String(b, "UTF-8");
 		} catch (UnsupportedEncodingException e) {
