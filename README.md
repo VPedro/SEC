@@ -16,11 +16,11 @@ SEC Project
 `keytool -genkeypair -dname "CN=gateway.mycompany.com, O=My Company, C=US" -alias rgateway -keyalg RSA -keysize 2048 -keystore keystorefile.jce -validity 365  -storetype JCEKS` <br>
 
 # TO DO
-`Create registerMessage(PublicKey, Signature, response)<br>
-Save must encript data<br>
-Retrieve must encript data<br>
-Library calls getNounce on Init<br>
-Verify FIXME's`<br>
+`Create registerMessage(PublicKey, Signature, response)`<br>
+`Save must encript data`<br>
+`Retrieve must encript data`<br>
+`Library calls getNounce on Init`<br>
+`Verify FIXME's`<br>
 
-`HardMode:<br>
-  Encrypt Domain and Username<br>`
+`HardMode:`<br>
+  `Encrypt Domain and Username`<br>
