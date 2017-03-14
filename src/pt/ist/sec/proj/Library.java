@@ -8,10 +8,12 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.ConnectException;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.security.*;
+
 
 public class Library {
 
@@ -22,13 +24,16 @@ public class Library {
 	DataOutputStream outData;
 	DataInputStream inData;
 
-	PublicKey pubKey;
-	PrivateKey privKey;
+	static PublicKey pubKey;
+	static PrivateKey privKey;
+	
+	Crypto crypto;
 
 	public boolean init(KeyStore keystore, String password){
 		//start socket
 		String serverName = "";
 		int serverPort = 1025;
+		crypto = new Crypto();
 		try {
 			client = new Socket(serverName, serverPort);
 			outObject = new ObjectOutputStream(client.getOutputStream());
@@ -91,11 +96,11 @@ public class Library {
 		 * not already known by the server, or to an update otherwise. 
 		*/
 		
-		Message msg = new Message("save_password", domain, username, password);
+		Message msg = new Message("save_password", domain, username, crypto.encrypt(password, pubKey));
 		outObject.writeObject(msg);
 	}
 	
-	public byte[] retrieve_password(byte[] domain, byte[] username){
+	public String retrieve_password(byte[] domain, byte[] username){
 		/* retrieves the password associated with the given (domain,username) 
 		 * pair. The behavior of what should happen if the (domain, username) 
 		 * pair does not exist is unspecified. 
@@ -116,7 +121,13 @@ public class Library {
 		}
 		
 		//TODO verify signature and decript if valid
-		return m.getPassword();
+		byte[] b = crypto.decrypt(m.getPassword(), privKey);
+		try {
+			return new String(b, "UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+		}
+		return null;
 	}
 	
 	public void close(){

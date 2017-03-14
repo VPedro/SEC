@@ -10,6 +10,8 @@ import java.security.Signature;
 import java.security.SignatureException;
 import java.util.Base64;
 
+import javax.crypto.Cipher;
+
 public class Crypto {
 
 	public String encode_base64(byte[] bytes){
@@ -63,6 +65,33 @@ public class Crypto {
 			System.out.println("failed to sign data");
 		}
 		return signature;
+	}
+	
+	public byte[] encrypt(byte[] text, PublicKey pubKey) {
+		byte[] cipherText = null;
+		try {
+			final Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+			// encrypt using the public key
+			cipher.init(Cipher.ENCRYPT_MODE, pubKey);
+			cipherText = cipher.doFinal(text);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return cipherText;
+	}
+
+	public byte[] decrypt(byte[] text, PrivateKey privKey) {
+		byte[] decryptedText = null;
+		try {
+			final Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+			// decrypt using the private key
+			cipher.init(Cipher.DECRYPT_MODE, privKey);
+			decryptedText = cipher.doFinal(text);
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
+
+		return decryptedText;
 	}
 	
 	public boolean signature_verify(byte[] signature, PublicKey publicKey, byte[] data){

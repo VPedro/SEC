@@ -26,17 +26,14 @@ public class Server {
 	private Crypto crypto;
 	
 	public void put(byte[] domain, byte[] username, byte[] password){
-		System.out.println("put password received");
 		ArrayList<String> list = new ArrayList<String>(); list.add(crypto.encode_base64(domain)); list.add(crypto.encode_base64(username));
 		passwords.put(list, crypto.encode_base64(password));
-		System.out.println("saved: "+ crypto.encode_base64(password));
 	}
 	
 	public byte[] get(byte[] domain, byte[] username) throws UnsupportedEncodingException{
 		ArrayList<String> list = new ArrayList<String>(); list.add(crypto.encode_base64(domain)); list.add(crypto.encode_base64(username));
 		String password_retrieved = passwords.get(list);
 		if(password_retrieved != null){
-			System.out.println("decoded pss: "+crypto.decode_base64(password_retrieved));// + crypto.decode_base64(password_retrieved));
 			return crypto.decode_base64(password_retrieved);
 		}
 		else {
