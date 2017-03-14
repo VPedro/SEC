@@ -89,24 +89,23 @@ public class Library {
 		}
 		
 	}
+	
+	public Message createMessage(String s, byte[] domain, byte[] username, byte[] password) {
+		byte[] sig_d = crypto.signature_generate(domain, privKey);
+		byte[] sig_u = crypto.signature_generate(username, privKey);
+		byte[] p = crypto.encrypt(password, pubKey);
+		byte[] sig_p = crypto.signature_generate(p, privKey);
+		
+		return new Message(s, pubKey, sig_d, sig_u, sig_p, domain, username, p);
+	}
 
 	public void save_password(byte[] domain, byte[] username, byte[] password) throws IOException {
-		/* stores  the  triple  (domain, username, password)  on  the  server. 
-		 * This corresponds	to an insertion	if the (domain,	username) pair is 
-		 * not already known by the server, or to an update otherwise. 
-		*/
-		
-		Message msg = new Message("save_password", domain, username, crypto.encrypt(password, pubKey));
+		Message msg = createMessage("save_password", domain, username, password);
 		outObject.writeObject(msg);
 	}
 	
 	public String retrieve_password(byte[] domain, byte[] username){
-		/* retrieves the password associated with the given (domain,username) 
-		 * pair. The behavior of what should happen if the (domain, username) 
-		 * pair does not exist is unspecified. 
-		 */
-		
-		Message msg = new Message("retrieve_password", domain, username, null);
+		Message msg = createMessage("retrieve_password", domain, username, null);
 
 		Message m = null;
 		try {

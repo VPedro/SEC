@@ -8,12 +8,19 @@ public class Message implements Serializable{
 	private static final long serialVersionUID = 1L;
 	private String functionName;
 	private PublicKey publicKey;
+	private byte[] sig_domain;
+	private byte[] sig_username;
+	private byte[] sig_password;
 	private byte[] domain;
 	private byte[] username;
 	private byte[] password;
 	
-	public Message(String functionName, byte[] domain, byte[] username, byte[] password) {
+	public Message(String functionName, PublicKey key, byte[] sig_domain, byte[] sig_username, byte[] sig_password, byte[] domain, byte[] username, byte[] password) {
 		this.functionName = functionName;
+		this.publicKey = key;
+		this.sig_domain = sig_domain;
+		this.sig_username = sig_username;
+		this.sig_password = sig_password;
 		this.domain = domain;
 		this.username = username;
 		this.password = password;
@@ -48,6 +55,30 @@ public class Message implements Serializable{
 	}
 	public void setPublicKey(PublicKey publicKey) {
 		this.publicKey = publicKey;
+	}
+
+	public byte[] getSig_domain() {
+		return sig_domain;
+	}
+
+	public void setSig_domain(byte[] sig_domain) {
+		this.sig_domain = sig_domain;
+	}
+
+	public byte[] getSig_username() {
+		return sig_username;
+	}
+
+	public void setSig_username(byte[] sig_username) {
+		this.sig_username = sig_username;
+	}
+
+	public byte[] getSig_password() {
+		return sig_password;
+	}
+
+	public void setSig_password(byte[] sig_password) {
+		this.sig_password = sig_password;
 	}
 	
 }

@@ -50,11 +50,14 @@ public class Crypto {
 	
 	
 	public byte[] signature_generate(byte[] bytes, PrivateKey privateKey){
+		if(bytes == null) {
+			return null;
+		}
 		byte[] signature = null;
 		Signature dsaForSign;
 		try {
-			dsaForSign = Signature.getInstance("SHA1withDSA");
-			dsaForSign.initSign(privateKey); 
+			dsaForSign = Signature.getInstance("SHA1withRSA");
+			dsaForSign.initSign(privateKey);
 			dsaForSign.update(bytes); 
 			signature = dsaForSign.sign();
 		} catch (NoSuchAlgorithmException e) {
@@ -68,6 +71,9 @@ public class Crypto {
 	}
 	
 	public byte[] encrypt(byte[] text, PublicKey pubKey) {
+		if(text == null) {
+			return null;
+		}
 		byte[] cipherText = null;
 		try {
 			final Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
@@ -99,7 +105,7 @@ public class Crypto {
 		boolean verifies = false;
 		Signature dsaForVerify;
 		try {
-			dsaForVerify = Signature.getInstance("SHA1withDSA");
+			dsaForVerify = Signature.getInstance("SHA1withRSA");
 			dsaForVerify.initVerify(publicKey); 
 			dsaForVerify.update(data); 
 			verifies = dsaForVerify.verify(signature);
