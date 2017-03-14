@@ -95,61 +95,16 @@ public class Server {
 		//FIXME save open connection and close them on close message
 		
 		System.out.println("===== Server Started =====");
-		try {
-			server.serverSocket = new ServerSocket(1025);
-			Socket serverClient = server.serverSocket.accept();
-	
-			//DataInputStream in = new DataInputStream(server.getInputStream());
-			//DataOutputStream out = new DataOutputStream(serverClient.getOutputStream());
-			//System.out.println(in.readUTF());
-            //out.writeUTF("Goodbye!");
-			ObjectInputStream objIn = new ObjectInputStream(serverClient.getInputStream());
-			ObjectOutputStream objOut = new ObjectOutputStream(serverClient.getOutputStream());
-            
-			Object input;
-			while(true){ //serverClient.getInputStream().read() != -1  => FILTHY HACK, GARBAGE, explodes on save password
-            	System.out.println("");
-            	try {
-            		input = objIn.readObject();
-            		//System.out.println("received: " + input);
-            		
-            		if (input instanceof Message) {
-            			Message m = (Message)input;
-            			if(m.getFunctionName().equals("save_password")){
-    						System.out.println("Save_password received.");
-    						server.put(m.getDomain(), m.getUsername(), m.getPassword());
-    						//out.writeUTF("Password saved!");
-    					}
-    					else if(m.getFunctionName().equals("retrieve_password")){
-    						System.out.println("Retrieve_password received.");
-    						byte[] pass = server.get(m.getDomain(), m.getUsername());
-    						Message m2 = new Message(null, null, null, pass);
-    						objOut.writeObject(m2);
-    					}
-            		}else if(input instanceof Message2) {
-            			Message2 m = (Message2)input;
-    					
-    					if(m.getFunc().equals("register")){
-    						String result = server.register(m);
-    						Message2 m2 = new Message2("register",null,result);
-    						objOut.writeObject(m2);
-    					}
-    					else if(m.getFunc().equals("close")){
-    						String result = server.close();
-    						Message2 m2 = new Message2("close", null, result);
-    						objOut.writeObject(m2);
-    						
-    					}
-					}
-				} catch (ClassNotFoundException e) {
-					e.printStackTrace();
-				} catch (EOFException e) {
-					//e.printStackTrace();
-					System.out.println("EOF"); //FIXME
-					//System.exit(0);
+		Socket serverClient = null;
+		
+			try {
+				server.serverSocket = new ServerSocket(1025);				
+				while(true){
+					serverClient = server.serverSocket.accept();
+					new ServerThread(serverClient, server).start();
 				}
-           }            
            //server.serverSocket.close();
+			
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
