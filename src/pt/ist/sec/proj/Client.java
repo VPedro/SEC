@@ -47,6 +47,7 @@ public class Client {
 			} 
 		} catch (NoSuchAlgorithmException | CertificateException | KeyStoreException e) {
 			e.printStackTrace();
+			ks = null;
 		} catch (IOException e){
 			ks = null;
 		}
@@ -58,6 +59,7 @@ public class Client {
 		Library l = new Library();
 		Scanner s = new Scanner(System.in);
 		int option = 0;
+		boolean initiated = false;
 		String input;
 		String[] spl;
 		System.out.println(" ");
@@ -79,20 +81,29 @@ public class Client {
 					input = s.nextLine();
 					KeyStore ks = c.getKeyStore(input);
 					if(ks==null){
-						System.out.println("wrong password, try again");
+						System.err.println("wrong password, try again");
 						continue;
 					} //FIXME returns success?
-					l.init(ks, input);
+					if(l.init(ks, input))
+						initiated =true;
 					break;
 				case 2:
-					l.register(null);
+					l.register_user();
 					break;
 				case 3:
+					if(!initiated){
+						System.err.println("you need to call init in order to contact server");
+						continue;
+					}
 					System.out.println("Enter Domain Username Password");
 					s.nextLine();
 					input = s.nextLine();
 					spl = input.split(" ");
 					try {
+						if(spl.length != 3){
+							System.err.println("3 parameters expected");
+							continue;
+						}
 						l.save_password(spl[0].getBytes("UTF-8"), spl[1].getBytes("UTF-8"), spl[2].getBytes("UTF-8"));
 					} catch (IOException e) {
 						e.printStackTrace();
@@ -100,10 +111,18 @@ public class Client {
 					
 					break;
 				case 4:
+					if(!initiated){
+						System.err.println("you need to call init in order to contact server");
+						continue;
+					}
 					System.out.println("Enter Domain Username");
 					s.nextLine();
 					input = s.nextLine();
 					spl = input.split(" ");
+					if(spl.length != 2){
+						System.err.println("2 parameters expected");
+						continue;
+					}
 					byte[] pass = l.retrieve_password(spl[0].getBytes(), spl[1].getBytes());
 					if(pass == null){
 						System.out.println("No password found!");
@@ -117,8 +136,15 @@ public class Client {
 					}
 					break;
 				case 5:
+					if(!initiated){
+						System.err.println("you need to call init in order to contact server");
+						continue;
+					}
 					l.close();
-					System.exit(0);
+					initiated=false;
+					l=new Library();
+					System.out.println("closed with success");
+					break;
 				default:
 					System.out.println("Invalid argument. Try again");
 			}
