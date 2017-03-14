@@ -1,10 +1,13 @@
 package pt.ist.sec.proj;
 
 import java.io.Serializable;
+import java.security.PublicKey;
 
 public class Message implements Serializable{
 
+	private static final long serialVersionUID = 1L;
 	private String functionName;
+	private PublicKey publicKey;
 	private byte[] domain;
 	private byte[] username;
 	private byte[] password;
@@ -15,6 +18,7 @@ public class Message implements Serializable{
 		this.username = username;
 		this.password = password;
 	}
+	
 	public String getFunctionName() {
 		return functionName;
 	}
@@ -38,6 +42,12 @@ public class Message implements Serializable{
 	}
 	public void setPassword(byte[] password) {
 		this.password = password;
+	}
+	public PublicKey getPublicKey() {
+		return publicKey;
+	}
+	public void setPublicKey(PublicKey publicKey) {
+		this.publicKey = publicKey;
 	}
 	
 }

@@ -86,7 +86,8 @@ public class Crypto {
 			final Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
 			// decrypt using the private key
 			cipher.init(Cipher.DECRYPT_MODE, privKey);
-			decryptedText = cipher.doFinal(text);
+			if(text == null){return null;}
+			else {	decryptedText = cipher.doFinal(text);}
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}

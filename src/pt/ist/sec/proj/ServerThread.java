@@ -35,17 +35,15 @@ public class ServerThread extends Thread {
         		if (input instanceof Message) {
         			Message m = (Message)input;
         			if(m.getFunctionName().equals("save_password")){
-						System.out.println("Save_password received.");
-						server.put(m.getDomain(), m.getUsername(), m.getPassword());
-						//out.writeUTF("Password saved!");
+        				server.put(m.getPublicKey(), m.getDomain(), m.getUsername(), m.getPassword());
 					}
 					else if(m.getFunctionName().equals("retrieve_password")){
-						System.out.println("Retrieve_password received.");
-						byte[] pass = server.get(m.getDomain(), m.getUsername());
+						byte[] pass = server.get(m.getPublicKey(), m.getDomain(), m.getUsername());
 						Message m2 = new Message(null, null, null, pass);
 						objOut.writeObject(m2);
 					}
-        		}else if(input instanceof Message2) {
+        		}
+        		else if(input instanceof Message2) {
         			Message2 m = (Message2)input;
 					
 					if(m.getFunc().equals("register")){

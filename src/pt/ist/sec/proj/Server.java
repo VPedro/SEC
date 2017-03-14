@@ -22,16 +22,28 @@ public class Server {
 
 	private ServerSocket serverSocket;
 	private Map<ArrayList<String>, String> passwords;
+	private Map<ArrayList<String>, PublicKey> publicKeys;	
 	private Map<PublicKey, Integer> nounces;
 	private List<Integer> usedNounces;
 	private Crypto crypto;
 	
-	public void put(byte[] domain, byte[] username, byte[] password){
+	public PublicKey getKey(byte[] domain, byte[] username){
+		ArrayList<String> list = new ArrayList<String>(); list.add(crypto.encode_base64(domain)); list.add(crypto.encode_base64(username));
+		PublicKey key_retrieved = publicKeys.get(list);
+		return key_retrieved;
+	}
+	
+	public void putKey(byte[] domain, byte[] username, PublicKey publicKey){
+		ArrayList<String> list = new ArrayList<String>(); list.add(crypto.encode_base64(domain)); list.add(crypto.encode_base64(username));
+		publicKeys.put(list, publicKey);
+	}
+	
+	public void putMap(byte[] domain, byte[] username, byte[] password){
 		ArrayList<String> list = new ArrayList<String>(); list.add(crypto.encode_base64(domain)); list.add(crypto.encode_base64(username));
 		passwords.put(list, crypto.encode_base64(password));
 	}
 	
-	public byte[] get(byte[] domain, byte[] username) throws UnsupportedEncodingException{
+	public byte[] getMapValue(byte[] domain, byte[] username) throws UnsupportedEncodingException{
 		ArrayList<String> list = new ArrayList<String>(); list.add(crypto.encode_base64(domain)); list.add(crypto.encode_base64(username));
 		String password_retrieved = passwords.get(list);
 		if(password_retrieved != null){
@@ -42,9 +54,6 @@ public class Server {
 		}
 	}
 	
-	//FIXME isto nao devia ser apagado?? estes metodos sao para ser implementados no server
-		/*************************************** SERVER ***************************************/
-		
 		/** Requirements:
 		 *	Non-Repudiation of any action that alters passwords
 		 *  Confidentiality and Integrity of domains, usernames and passwords 
@@ -57,36 +66,29 @@ public class Server {
 			}
 			
 			public void	put(Key publicKey, byte[] domain, byte[] username, byte[] password){ 
-				/* stores the triple (domain, username, password) on the server. 
-				 * This corresponds to an insertion if the (domain, username) pair is 
-				 * not already known by the server, or to an update otherwise.
-				 * Anomalous or unauthorized requests should return an appropriate 
-				 * exception or error code
-				 */
+				System.out.println("Save_password received.");
+				putMap(domain, username, password);
 			}
 			
 			public byte[] get(Key publicKey, byte[] domain, byte[] username){
-				/* retrieves the password associated with the given (domain, username) 
-				 * pair. Anomalous or unauthorized requests should return an appropriate 
-				 * exception or	error code
-				 */
-				return null;
+				System.out.println("Retrieve_password received.");
+				byte[] pass = null;
+				try {
+					pass = getMapValue(domain, username);
+				} catch (UnsupportedEncodingException e) {
+					e.printStackTrace();
+				}
+				return pass;
 			}
 	
 	public String register(Message2 msg){
 		System.out.println("register command received");
-		
 		//decripts with msg.getPubKey()
-		
 		//verifies hash 
-		
 		//return Anomalous or unauthorized
-		
 		//if ja esta noutro disp return nounce atual
-		
 		int nounce = getNounce();
 		nounces.put(msg.getPubKey(), nounce);
-		
 		return "Success";
 	}
 	
