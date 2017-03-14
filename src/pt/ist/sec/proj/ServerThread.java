@@ -28,7 +28,8 @@ public class ServerThread extends Thread {
             System.out.println("IOException");;
         }
         Object input;
-        while (true) {
+        boolean var = true;
+        while (var) {
         	try {
         		input = objIn.readObject();
         		if (input instanceof Message) {
@@ -53,17 +54,21 @@ public class ServerThread extends Thread {
 						objOut.writeObject(m2);
 					}
 					else if(m.getFunc().equals("close")){
-						String res = server.close();
-						Message2 m2 = new Message2("close", null, res);
+						Message2 m2 = new Message2("close", null, "Closing");
 						objOut.writeObject(m2);
-						
+						var = false;
+						server.close();	
+						//return;
 					}
-				}
+				}/*else if(input==null){
+					server.close();
+				}*/
 			} catch (ClassNotFoundException e) {
 				e.printStackTrace();
 			} catch (EOFException e) {
 				//e.printStackTrace();
-				System.out.println("EOFException"); //FIXME
+				System.out.println("Exiting"); //FIXME
+				var = false;
 				//System.exit(0);
 			} catch (IOException e) {
 				System.out.println("IOException");

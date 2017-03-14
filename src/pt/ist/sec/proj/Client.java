@@ -4,6 +4,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.SocketException;
 import java.security.*;
 import java.security.cert.CertificateException;
 import java.util.ArrayList;
@@ -64,7 +65,8 @@ public class Client {
 		String[] spl;
 		System.out.println(" ");
 		System.out.println("===== Client Started =====");
-		while(true){
+		boolean var = true;
+		while(var){
 			c.menu();
 			while(!s.hasNextInt()) {
 			    s.next();
@@ -105,6 +107,9 @@ public class Client {
 							continue;
 						}
 						l.save_password(spl[0].getBytes("UTF-8"), spl[1].getBytes("UTF-8"), spl[2].getBytes("UTF-8"));
+					} catch(SocketException e){
+						System.out.println("Server not available. Exiting..");
+						var = false;
 					} catch (IOException e) {
 						e.printStackTrace();
 					}
@@ -136,13 +141,14 @@ public class Client {
 					}
 					break;
 				case 5:
-					if(!initiated){
+					/*if(!initiated){
 						System.err.println("you need to call init in order to contact server");
 						continue;
-					}
+					}*/
+					var = false;
 					l.close();
-					initiated=false;
-					l=new Library();
+					//initiated=false;
+					//l=new Library();
 					System.out.println("closed with success");
 					break;
 				default:

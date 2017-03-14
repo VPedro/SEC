@@ -133,7 +133,8 @@ public class Library {
 			resMsg = (Message2)inObject.readObject();
 			System.out.println("result from server: " + resMsg.getRes());
 			//FIXME close socket
-			client.close();
+			//client.close();
+			//System.exit(0);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
