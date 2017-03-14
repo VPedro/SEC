@@ -20,7 +20,7 @@ SEC Project
 Save must encript data
 Retrieve must encript data
 Library calls getNounce on Init
-Verify FIXME's
+Verify FIXME's`
 
-HardMode:
+`HardMode:
   Encrypt Domain and Username`
