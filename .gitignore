@@ -1,4 +1,7 @@
 /bin
 /bin/*
 /src/pt/ist/sec/proj/*.class
+*/*.class
+/*.class
+*.class
 .classpath
