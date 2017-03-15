@@ -100,11 +100,7 @@ public class Library {
 	}
 
 
-	public boolean register_user(){
-		/* registers  the  user  on  the  server,  initializing the  
-		 * required  data structures to securely store the password
-		 */
-		//SignedMessage msg = createRegMessage("");
+	public void register_user(){
 		byte[] sig_pub = crypto.signature_generate(pubKey.getEncoded(), privKey);
 		
 		SignedMessage msg = new SignedMessage("register", pubKey, sig_pub,  null);
@@ -112,14 +108,12 @@ public class Library {
 		try {
 			outObject.writeObject(msg);
 			resMsg = (SignedMessage)inObject.readObject();
-			System.out.println("result from server: " + resMsg.getRes());
-			return true;
+			System.out.println(resMsg.getRes());
+ //FIXME try to register 2 times, when we implement the server' map<PublicKey, nounce>
 		} catch (IOException e) {
-			//e.printStackTrace();
-			return false;
+			e.printStackTrace();
 		} catch (ClassNotFoundException e) {
-			//e.printStackTrace();
-			return false;
+			e.printStackTrace();
 		}
 		
 	}
@@ -136,9 +130,14 @@ public class Library {
 	public void save_password(byte[] domain, byte[] username, byte[] password) throws IOException {
 		Message msg = createMessage("save_password", domain, username, password);
 		outObject.writeObject(msg);
+		SignedMessage m = null;
+		try {
+			m = (SignedMessage)inObject.readObject();
+			System.out.println(m.getRes());
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		}		
 	}
-	
-	//SIGN_VERIFY recebe as chaves de quem? ou dos dois?
 	
 	public String retrieve_password(byte[] domain, byte[] username){
 		Message msg = createMessage("retrieve_password", domain, username, null);
@@ -148,10 +147,8 @@ public class Library {
 			outObject.writeObject(msg);
 			m = (Message)inObject.readObject();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (ClassNotFoundException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		
@@ -166,27 +163,18 @@ public class Library {
 		return null;
 	}
 	
-	public void close(){
-		/* concludes the current session of commands with the client library */
-		
+	public void close(){		
 		//removeKeys
-		
 		//FIXME enviamos tambem a public key para apagar de um map loggedUsers?
 		Message2 msg = new Message2("close", pubKey, null);
-
 		Message2 resMsg = null;
 		try {
 			outObject.writeObject(msg);
 			resMsg = (Message2)inObject.readObject();
 			System.out.println("result from server: " + resMsg.getRes());
-			//FIXME close socket
-			//client.close();
-			//System.exit(0);
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (ClassNotFoundException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}

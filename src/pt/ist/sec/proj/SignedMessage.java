@@ -16,6 +16,7 @@ public class SignedMessage implements Serializable{
 		this.sign = sign;
 		this.res = res;
 	}
+
 		
 	public String getFunc() {
 		return func;
@@ -44,5 +45,5 @@ public class SignedMessage implements Serializable{
 	public void setRes(String res) {
 		this.res = res;
 	}
-		
+
 }

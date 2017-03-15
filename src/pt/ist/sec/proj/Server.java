@@ -120,28 +120,24 @@ public class Server {
 	 **/
 
 	public boolean register(SignedMessage msg){ 
-		/* registers the user in the server. Anomalous or unauthorized
-		 * requests should return an appropriate exception or error code
-		 */
-		//Verifica se é repetido o publicKey
-
-		//cria nouce para qnd for feito init
-
-
-
-		System.out.println("registered with sucess on server");
+		//cria nouce para qnd for feito init //FIXME
+		if(this.nounces.containsKey(msg.getPubKey())){
+			System.out.println("Client was already registered");
+			return false;
+		}
+		System.out.println("Client registered");
 		return true;
 
 	}
 
 	public void	put(PublicKey publicKey, byte[] domain, byte[] username, byte[] password){ 
-		System.out.println("Save_password received.");
+		System.out.println("Server executed: Save_password");
 		putMap(publicKey, domain, username, password);
 
 	}
 
 	public byte[] get(PublicKey publicKey, byte[] domain, byte[] username){
-		System.out.println("Retrieve_password received.");
+		System.out.println("Server executed: Retrieve_password");
 		byte[] pass = null;
 		try {
 			pass = getMapValue(publicKey, domain, username);
@@ -152,7 +148,7 @@ public class Server {
 	}
 
 	public String register(Message2 msg){
-		System.out.println("register command received");
+		System.out.println("Server executed: Register");
 		//vem com pubKe
 
 
@@ -166,7 +162,7 @@ public class Server {
 	}
 
 	public String close(){
-		System.out.println("close command received");
+		System.out.println("Server executed: Close");
 		return "Success";
 	}
 

@@ -52,9 +52,11 @@ public class ServerThread extends Thread {
 						if(ver_d && ver_u && ver_p){
 							System.out.println("DUP Signature verified successfully!");
 							server.put(m.getPublicKey(), m.getDomain(), m.getUsername(), m.getPassword());
+							objOut.writeObject(new SignedMessage(null, null, null, "Password saved"));
 						}
 						else {
-							System.out.println("Signature not valid!");
+							System.out.println("DUP Signature not valid!");
+							objOut.writeObject(new SignedMessage(null, null, null, "Password not saved"));
 						}
 					}
 					else if(m.getFunctionName().equals("retrieve_password")){
@@ -83,20 +85,16 @@ public class ServerThread extends Thread {
 							if(valid) {
 								System.out.println("Signature verified successfully!");
 								//FIXME add sign for server?
-								SignedMessage m2 = new SignedMessage(null, null, null, "Regitered with success");
+								SignedMessage m2 = new SignedMessage(null, null, null, "Registered with success");
 								objOut.writeObject(m2);
 							}
-							
-							//Message2 m2 = new Message2("register",null,res);
-							//objOut.writeObject(resMsg);
-							
-							//return (String func, PublicKey pubKey, byte[] sign, String res) 
-						}else{
-							//FIXME propagar exceptions do server.register(m)  para aqui e dependendo do catch mandamos uma msg diferente
-							SignedMessage resMsg = new SignedMessage(null,null,null ,"Fail for some reason");
 						}
-						
-					}else if(m.getFunc().equals("nounce")){
+						else{
+							SignedMessage resMsg = new SignedMessage(null,null,null ,"Fail for some reason");
+							objOut.writeObject(resMsg);
+						}
+					}
+					else if(m.getFunc().equals("nounce")){
 						Long nounce= server.getNounce();
 						if(nounce != 0){
 							boolean valid = crypto.signature_verify(m.getSign(), m.getPubKey(), m.getPubKey().getEncoded());
