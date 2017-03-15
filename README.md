@@ -20,6 +20,9 @@ SEC Project
 
 # TO DO
 `Verify FIXME's`<br>
-
+`3 or 4 without register`<br>
+`close sem init`<br>
+`retrieve de cenas que nao estao saved`<br>
+`retrieve sem nenhum save`<br>
 `HardMode:`<br>
   `Encrypt Domain and Username`<br>
