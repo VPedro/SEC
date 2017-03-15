@@ -77,7 +77,7 @@ public class Client {
 			option = s.nextInt();
 			System.out.println(" ");
 			switch(option){
-			//LOGIN
+			//INIT
 			case 1:
 				if(initiated){
 					System.err.println("you have already executed init");
