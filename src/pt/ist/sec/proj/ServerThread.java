@@ -50,7 +50,7 @@ public class ServerThread extends Thread {
 						ver_u = crypto.signature_verify(m.getSig_username(), m.getPublicKey(), m.getUsername());
 						ver_p = crypto.signature_verify(m.getSig_password(), m.getPublicKey(), m.getPassword());
 						if(ver_d && ver_u && ver_p){
-							System.out.println("Signature verified successfully!");
+							System.out.println("DUP Signature verified successfully!");
 							server.put(m.getPublicKey(), m.getDomain(), m.getUsername(), m.getPassword());
 						}
 						else {
@@ -103,7 +103,7 @@ public class ServerThread extends Thread {
 							
 							if(valid) {
 								System.out.println("Signature verified successfully!");
-								System.out.println("generated nounce: "+ nounce.toString());
+								System.out.println("Thread generated nounce: "+ nounce.toString());
 								
 								//FIXME add sign for server?
 								SignedMessage m2 = new SignedMessage(null, null, null, nounce.toString());

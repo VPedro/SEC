@@ -44,7 +44,7 @@ public class Library {
 			inData = new DataInputStream(client.getInputStream());
 			setKeys(keystore, alias, password);
 			
-			nextNounce = getNouce();
+			nextNounce = getNonce();
 			return true;
 
 		} catch (UnknownHostException e) {
@@ -60,7 +60,7 @@ public class Library {
 	}
 
 	
-	private long getNouce() {
+	private long getNonce() {
 		long res = 0;
 		
 		byte[] sig_pub = crypto.signature_generate(pubKey.getEncoded(), privKey);
