@@ -110,7 +110,7 @@ public class Client {
 				}
 				if(l.register_user()){
 					System.out.println("Registered with success");
-				}else if(true){//FIXME
+				}else {
 					System.out.println("You were already registered in the server");
 				}
 				break;

@@ -45,6 +45,7 @@ public class Library {
 			setKeys(keystore, alias, password);
 			
 			nextNounce = getNonce();
+			
 			return true;
 
 		} catch (UnknownHostException e) {
@@ -65,15 +66,27 @@ public class Library {
 		
 		byte[] sig_pub = crypto.signature_generate(pubKey.getEncoded(), privKey);
 		
-		SignedMessage msg = new SignedMessage("nounce", pubKey, sig_pub,  null);
+		SignedMessage msg = new SignedMessage("nounce", pubKey, sig_pub,  null, null, null);
 		SignedMessage resMsg = null;
 		try {
 			outObject.writeObject(msg);
 			resMsg = (SignedMessage)inObject.readObject();
-			Long l = Long.valueOf(resMsg.getRes()).longValue();
-			System.out.println("nounce reveived: " + l);
-			
-			nextNounce = l;
+
+			boolean valid = crypto.signature_verify(resMsg.getSignNounce(), resMsg.getPubKey(),  resMsg.getNounce().getBytes("UTF-8"));
+			if(valid ){
+				
+				if(resMsg.getRes().equals("fail")){
+					System.out.println("Could not save the password");
+				}else{
+					boolean validNounce = crypto.signature_verify(resMsg.getSignNounce(), resMsg.getPubKey(),  resMsg.getNounce().getBytes("UTF-8"));
+					if(validNounce){
+						//save received nounce
+						Long l = Long.valueOf(resMsg.getNounce().toString()).longValue();
+						System.out.println("nounce reveived: " + l);
+						nextNounce = l;
+					}
+				}
+			}		
 		} catch (IOException e) {
 			e.printStackTrace();
 			return 0;
@@ -88,7 +101,7 @@ public class Library {
 
 	private void setKeys(KeyStore ks, String alias, String password) {
 		try {
-			//Get the keys for the given alias.			
+			//Get the keys for the given alias and password.			
 			pubKey = ks.getCertificate(alias).getPublicKey();
 			privKey = (PrivateKey) ks.getKey(alias, password.toCharArray());
 			
@@ -107,12 +120,14 @@ public class Library {
 		//SignedMessage msg = createRegMessage("");
 		byte[] sig_pub = crypto.signature_generate(pubKey.getEncoded(), privKey);
 		
-		SignedMessage msg = new SignedMessage("register", pubKey, sig_pub,  null);
+		SignedMessage msg = new SignedMessage("register", pubKey, sig_pub,  null, null, null);
 		SignedMessage resMsg = null;
 		try {
 			outObject.writeObject(msg);
 			resMsg = (SignedMessage)inObject.readObject();
 			if(resMsg.getRes().equals("success")){
+				long n = 0;
+				nextNounce = n;
 				System.out.println("Registered in server with success");
 				return true;
 			}else if(resMsg.getRes().equals("used key")){
@@ -141,7 +156,34 @@ public class Library {
 
 	public void save_password(byte[] domain, byte[] username, byte[] password) throws IOException {
 		Message msg = createMessage("save_password", domain, username, password);
-		outObject.writeObject(msg);
+		SignedMessage resMsg = null;
+		try {
+			outObject.writeObject(msg);
+			resMsg = (SignedMessage)inObject.readObject();
+			
+			boolean valid = crypto.signature_verify(resMsg.getSign(), resMsg.getPubKey(), resMsg.getPubKey().getEncoded());
+			if(valid){
+				if(resMsg.getRes().equals("success")){
+					System.out.println("Password saved with success");
+					boolean validNounce = crypto.signature_verify(resMsg.getSignNounce(), resMsg.getPubKey(),  resMsg.getNounce().getBytes("UTF-8"));
+					if(validNounce){
+						//save new nounce
+						Long l = Long.valueOf(resMsg.getNounce().toString()).longValue();
+						System.out.println("nounce reveived: " + l);
+						nextNounce = l;
+					}
+				}else{
+					System.out.println("Error saving your password");
+				}
+			}
+			
+			//depending on getRes print
+			
+		} catch (IOException | ClassNotFoundException e) {
+			e.printStackTrace();
+			System.out.println("could not save password");
+		}
+		
 	}
 	
 	//SIGN_VERIFY recebe as chaves de quem? ou dos dois?
@@ -175,7 +217,7 @@ public class Library {
 	public void close(){
 		
 		byte[] sig_pub = crypto.signature_generate(pubKey.getEncoded(), privKey);
-		SignedMessage msg = new SignedMessage("close",pubKey, sig_pub,null);
+		SignedMessage msg = new SignedMessage("close",pubKey, sig_pub,null, null, null);
 		SignedMessage resMsg = null;
 		try {
 			outObject.writeObject(msg);

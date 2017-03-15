@@ -17,6 +17,7 @@ public class ServerThread extends Thread {
 	
 	static PublicKey pubKey;
 	static PrivateKey privKey;
+	byte[] sign_pub;
 
 	public ServerThread(Socket clientSocket, Server server) {
 		this.socket = clientSocket;
@@ -36,11 +37,10 @@ public class ServerThread extends Thread {
 		Object input;
 		pubKey = server.getPubKey();
 		privKey = server.getPrivKey();
-		
-		//FIXME change name to connectionOpen
-		boolean var = true;
+		sign_pub = crypto.signature_generate(pubKey.getEncoded(), privKey);
+		boolean connectionOpen = true;
 		boolean ver_d, ver_u, ver_p;
-		while (var) {
+		while (connectionOpen) {
 			try {
 				ver_d = true;
 				ver_u = true;
@@ -48,18 +48,29 @@ public class ServerThread extends Thread {
 				input = objIn.readObject();
 				if (input instanceof Message) {
 					Message m = (Message)input;
+					SignedMessage resMsg;
 					if(m.getFunctionName().equals("save_password")){
 						ver_d = crypto.signature_verify(m.getSig_domain(), m.getPublicKey(), m.getDomain());
 						ver_u = crypto.signature_verify(m.getSig_username(), m.getPublicKey(), m.getUsername());
 						ver_p = crypto.signature_verify(m.getSig_password(), m.getPublicKey(), m.getPassword());
 						if(ver_d && ver_u && ver_p){
 							System.out.println("DUP Signature verified successfully!");
-							server.put(m.getPublicKey(), m.getDomain(), m.getUsername(), m.getPassword());
-						}
-						else {
+							server.put(m.getPublicKey(), m.getDomain(), m.getUsername(), m.getPassword());	
+							
+							Long nounce= server.getNounce();
+							if(nounce != 0){							
+								System.out.println("nouce that is going to be send: "+nounce.toString());
+								byte[] sign_nounce = crypto.signature_generate(nounce.toString().getBytes("UTF-8"), privKey);								
+								resMsg = new SignedMessage("register", pubKey, sign_pub, "success", nounce.toString(), sign_nounce);
+								objOut.writeObject(resMsg);
+							}else{
+								System.out.println("error generating nounce (serverThread)");
+								resMsg = new SignedMessage("register", pubKey, sign_pub, "fail", null, null);
+								objOut.writeObject(resMsg);
+							}
+						} else {
 							System.out.println("Signature not valid!");
-							byte[] sig_pub = crypto.signature_generate(pubKey.getEncoded(), privKey);
-							SignedMessage resMsg = new SignedMessage("register", pubKey, sig_pub, "Regitered with success");
+							resMsg = new SignedMessage("register", pubKey, sign_pub, "fail", null, null);
 							objOut.writeObject(resMsg);
 						}
 					}
@@ -74,8 +85,7 @@ public class ServerThread extends Thread {
 						}
 						else {
 							System.out.println("Signature not valid!");
-							byte[] sig_pub = crypto.signature_generate(pubKey.getEncoded(), privKey);
-							SignedMessage resMsg = new SignedMessage("register", pubKey, sig_pub, "Regitered with success");
+							resMsg = new SignedMessage("register", pubKey, sign_pub, "Regitered with success", null, null);
 							objOut.writeObject(resMsg);
 						}
 					}
@@ -83,37 +93,38 @@ public class ServerThread extends Thread {
 				else if(input instanceof SignedMessage) {
 					SignedMessage m = (SignedMessage)input;
 					boolean valid = crypto.signature_verify(m.getSign(), m.getPubKey(), m.getPubKey().getEncoded());
-					byte[] sig_pub = crypto.signature_generate(pubKey.getEncoded(), privKey);
 					SignedMessage resMsg;
 					if(!valid){
-						resMsg = new SignedMessage("register", pubKey, sig_pub, "error signature");
+						resMsg = new SignedMessage("register", pubKey, sign_pub, "error signature", null, null);
 						objOut.writeObject(resMsg);
 					}
 					if(m.getFunc().equals("register")){			
 						String result = server.register(m).getRes();
 						if(result.equals("success")){
 							System.out.println("Signature verified successfully!");
-							resMsg = new SignedMessage("register", pubKey, sig_pub, "Regitered with success");
+							resMsg = new SignedMessage("register", pubKey, sign_pub, "Regitered with success", null, null);
 							objOut.writeObject(resMsg);
 						}else if (result.equals("used key")){
-							resMsg = new SignedMessage("register",pubKey,sig_pub ,"used key");
+							resMsg = new SignedMessage("register",pubKey,sign_pub ,"used key", null, null);
 							objOut.writeObject(resMsg);
 						}
 					}else if(m.getFunc().equals("nounce")){
 						Long nounce= server.getNounce();
 						if(nounce != 0){							
 							System.out.println("nouce that is going to be send: "+nounce.toString());
-							resMsg = new SignedMessage("nounce",pubKey,sig_pub, nounce.toString());
+							//FIXME encriptar o nounce com a privada e so depois fazer sign como na pass?
+							byte[] sign_nounce = crypto.signature_generate(nounce.toString().getBytes("UTF-8"), privKey);
+							resMsg = new SignedMessage("nounce",pubKey,sign_pub, "success", nounce.toString(), sign_nounce);
 							objOut.writeObject(resMsg);
 						}else{
-							resMsg = new SignedMessage("nounce",pubKey,sig_pub ,"Fail for some reason");
+							resMsg = new SignedMessage("nounce",pubKey,sign_pub ,"fail", null, null);
 							objOut.writeObject(resMsg);
 						}
 						
 					}else if(m.getFunc().equals("close")){
-						resMsg = new SignedMessage("close",pubKey, sig_pub,"closed");
+						resMsg = new SignedMessage("close",pubKey, sign_pub,"closed", null, null);
 						objOut.writeObject(resMsg);
-						var = false;
+						connectionOpen = false;
 						server.close();	
 					}
 				}/*else if(input==null){
@@ -121,14 +132,16 @@ public class ServerThread extends Thread {
 				}*/
 			} catch (ClassNotFoundException e) {
 				e.printStackTrace();
+				connectionOpen = false;
 			} catch (EOFException e) {
 				//e.printStackTrace();
 				System.out.println("Exiting"); //FIXME
-				var = false;
+				connectionOpen = false;
 				//System.exit(0);
 			} catch (IOException e) {
-				System.out.println("IOException");
-				e.printStackTrace();
+				//e.printStackTrace();
+				System.out.println("Exiting");
+				connectionOpen = false;
 			}
 		}
 	}
