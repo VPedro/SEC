@@ -27,6 +27,8 @@ public class Library {
 	static PublicKey pubKey;
 	static PrivateKey privKey;
 	
+	private long nextNounce;
+	
 	Crypto crypto;
 
 	public boolean init(KeyStore keystore, String alias, String password){
@@ -41,6 +43,8 @@ public class Library {
 			outData = new DataOutputStream(client.getOutputStream());
 			inData = new DataInputStream(client.getInputStream());
 			setKeys(keystore, alias, password);
+			
+			nextNounce = getNouce();
 			return true;
 
 		} catch (UnknownHostException e) {
@@ -56,6 +60,32 @@ public class Library {
 	}
 
 	
+	private long getNouce() {
+		long res = 0;
+		
+		byte[] sig_pub = crypto.signature_generate(pubKey.getEncoded(), privKey);
+		
+		SignedMessage msg = new SignedMessage("nounce", pubKey, sig_pub,  null);
+		SignedMessage resMsg = null;
+		try {
+			outObject.writeObject(msg);
+			resMsg = (SignedMessage)inObject.readObject();
+			Long l = Long.valueOf(resMsg.getRes()).longValue();
+			System.out.println("nounce reveived: " + l);
+			
+			nextNounce = l;
+		} catch (IOException e) {
+			e.printStackTrace();
+			return 0;
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+			return 0;
+		}
+		
+		return res;
+	}
+
+
 	private void setKeys(KeyStore ks, String alias, String password) {
 		try {
 			//Get the keys for the given alias.			
@@ -64,7 +94,7 @@ public class Library {
 			
 		} catch (Exception e){
 			e.printStackTrace();
-			System.out.println("foi aqui");
+			System.out.println("impossible to load keys from keystore to library");
 		}
 		
 	}
@@ -85,10 +115,10 @@ public class Library {
 			System.out.println("result from server: " + resMsg.getRes());
 			return true;
 		} catch (IOException e) {
-			e.printStackTrace();
+			//e.printStackTrace();
 			return false;
 		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
+			//e.printStackTrace();
 			return false;
 		}
 		

@@ -2,6 +2,8 @@ package pt.ist.sec.proj;
 
 import java.io.DataOutputStream;
 import java.io.EOFException;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -9,9 +11,13 @@ import java.io.UnsupportedEncodingException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.security.Key;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
+import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -23,9 +29,12 @@ public class Server {
 	private ServerSocket serverSocket;
 	private Map<ArrayList<String>, String> passwords;
 	private Map<ArrayList<String>, PublicKey> publicKeys;	
-	private Map<PublicKey, Integer> nounces;
-	private List<Integer> usedNounces;
+	private Map<PublicKey, Long> nounces;
+	private List<Long> usedNounces;
 	private Crypto crypto;
+	
+	PublicKey pubKey;
+	PrivateKey privKey;
 	
 	public PublicKey getKey(byte[] domain, byte[] username){
 		ArrayList<String> list = new ArrayList<String>(); list.add(crypto.encode_base64(domain)); list.add(crypto.encode_base64(username));
@@ -58,6 +67,50 @@ public class Server {
 		else {
 			return null;
 		}
+	}
+	
+	private void setKeys(KeyStore ks, String alias, String password) {
+		try {
+			//Get the keys for the given alias.			
+			pubKey = ks.getCertificate(alias).getPublicKey();
+			privKey = (PrivateKey) ks.getKey(alias, password.toCharArray());
+			System.out.println("Loaded keys from keystore with success");
+		} catch (Exception e){
+			e.printStackTrace();
+			System.out.println("impossible to load keys from keystore to library");
+		}
+		
+	}
+	
+	public KeyStore getKeyStore(String pass){ //created with "olaola" as password
+		KeyStore ks = null;
+		try { //If KeyStore file already exists
+			FileInputStream fis = new FileInputStream("serverkeystorefile.jce");	//Open the KeyStore file
+			ks = KeyStore.getInstance("JCEKS"); //Create an instance of KeyStore of type “JCEKS”
+			ks.load(fis, pass.toCharArray()); //Load the key entries from the file into the KeyStore object.
+			fis.close();
+			System.out.println("KeyStore Loaded");
+		} //create it if cannot find it
+		catch (FileNotFoundException e) {	
+			try { //Could not load KeyStore file, create one
+				ks = KeyStore.getInstance("JCEKS");
+				ks.load(null, pass.toCharArray()); // Create keystore 
+				//Create a new file to store the KeyStore object
+				java.io.FileOutputStream fos = new java.io.FileOutputStream("serverkeystorefile.jce");
+				ks.store(fos, pass.toCharArray());
+				//Write the KeyStore into the file
+				fos.close();
+				System.out.println("KeyStore Created");
+			} catch (NoSuchAlgorithmException | CertificateException | IOException | KeyStoreException e1) {
+				e1.printStackTrace();
+			} 
+		} catch (NoSuchAlgorithmException | CertificateException | KeyStoreException e) {
+			e.printStackTrace();
+			ks = null;
+		} catch (IOException e){
+			ks = null;
+		}
+		return ks;
 	}
 	
 		/** Requirements:
@@ -107,7 +160,7 @@ public class Server {
 		//verifies hash 
 		//return Anomalous or unauthorized
 		//if ja esta noutro disp return nounce atual
-		int nounce = getNounce();
+		long nounce = getNounce();
 		nounces.put(msg.getPubKey(), nounce);
 		return "Success";
 	}
@@ -117,19 +170,19 @@ public class Server {
 		return "Success";
 	}
 	
-	public int getNounce(){
-		int res = 0;
+	public long getNounce(){
+		long res = 0;
 		try {
 			SecureRandom random = SecureRandom.getInstance("SHA1PRNG");
-			res = random.nextInt();
+			res = random.nextLong();
 			while(usedNounces.contains(res)){
 				res = random.nextInt();
 			}
 			usedNounces.add(res);
 			System.out.println("generated nounce: " + res);
 		} catch (NoSuchAlgorithmException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
+			return 0;
 		}
 		return res;
 	}
@@ -140,10 +193,11 @@ public class Server {
 		Server server = new Server();
 		server.crypto = new Crypto();
 		server.passwords = new HashMap<ArrayList<String>, String>();
-		server.nounces = new HashMap<PublicKey, Integer>();
-		server.usedNounces = new ArrayList<Integer>();
+		server.nounces = new HashMap<PublicKey, Long>();
+		server.usedNounces = new ArrayList<Long>();
 		
-		//FIXME save open connection and close them on close message
+		KeyStore ks  = server.getKeyStore("olaola");
+		server.setKeys(ks,"server","olaola");
 		
 		System.out.println("===== Server Started =====");
 		Socket serverClient = null;

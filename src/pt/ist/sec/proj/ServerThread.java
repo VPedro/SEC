@@ -96,6 +96,25 @@ public class ServerThread extends Thread {
 							SignedMessage resMsg = new SignedMessage(null,null,null ,"Fail for some reason");
 						}
 						
+					}else if(m.getFunc().equals("nounce")){
+						Long nounce= server.getNounce();
+						if(nounce != 0){
+							boolean valid = crypto.signature_verify(m.getSign(), m.getPubKey(), m.getPubKey().getEncoded());
+							
+							if(valid) {
+								System.out.println("Signature verified successfully!");
+								System.out.println("generated nounce: "+ nounce.toString());
+								
+								//FIXME add sign for server?
+								SignedMessage m2 = new SignedMessage(null, null, null, nounce.toString());
+								objOut.writeObject(m2);
+							}
+						
+						}else{
+							//FIXME propagar exceptions do server.register(m)  para aqui e dependendo do catch mandamos uma msg diferente
+							SignedMessage resMsg = new SignedMessage(null,null,null ,"Fail for some reason");
+						}
+						
 					}
 					else if(m.getFunc().equals("close")){
 						Message2 m2 = new Message2("close", null, "Closing");

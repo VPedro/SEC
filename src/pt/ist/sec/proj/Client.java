@@ -79,6 +79,10 @@ public class Client {
 			switch(option){
 			//LOGIN
 			case 1:
+				if(initiated){
+					System.err.println("you have already executed init");
+					continue;
+				}
 				System.out.println("Login to your KeyStore:\n\"Username Password\"");
 				s.nextLine();
 				input = s.nextLine();
@@ -107,7 +111,9 @@ public class Client {
 					continue;
 				}
 				if(l.register_user()){
-					//FIXME
+					System.out.println("Registered with success");
+				}else if(true){//FIXME
+					System.out.println("You were already registered in the server");
 				}
 				break;
 			//SAVE PASSWORD
@@ -158,19 +164,14 @@ public class Client {
 				break;
 			//CLOSE
 			case 5:
-				/*if(!initiated){
-						System.err.println("you need to call init in order to contact server");
-						continue;
-					}*/
 				var = false;
 				l.close();
-				//initiated=false;
-				//l=new Library();
 				System.out.println("closed with success");
 				break;
 			default:
 				System.out.println("Invalid argument. Try again");
 			}
 		}
+		s.close();
 	}
 }
