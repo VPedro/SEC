@@ -2,10 +2,8 @@ package pt.ist.sec.proj;
 
 import java.io.EOFException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.OutputStream;
 import java.net.Socket;
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -17,6 +15,7 @@ public class ServerThread extends Thread {
 	
 	static PublicKey pubKey;
 	static PrivateKey privKey;
+	byte[] sign_pub;
 
 	public ServerThread(Socket clientSocket, Server server) {
 		this.socket = clientSocket;
@@ -34,10 +33,12 @@ public class ServerThread extends Thread {
 			System.out.println("IOException");;
 		}
 		Object input;
-		//FIXME change name to connectionOpen
-		boolean var = true;
+		pubKey = server.getPubKey();
+		privKey = server.getPrivKey();
+		sign_pub = crypto.signature_generate(pubKey.getEncoded(), privKey);
+		boolean connectionOpen = true;
 		boolean ver_d, ver_u, ver_p;
-		while (var) {
+		while (connectionOpen) {
 			try {
 				ver_d = true;
 				ver_u = true;
@@ -45,18 +46,30 @@ public class ServerThread extends Thread {
 				input = objIn.readObject();
 				if (input instanceof Message) {
 					Message m = (Message)input;
+					SignedMessage resMsg;
 					if(m.getFunctionName().equals("save_password")){
 						ver_d = crypto.signature_verify(m.getSig_domain(), m.getPublicKey(), m.getDomain());
 						ver_u = crypto.signature_verify(m.getSig_username(), m.getPublicKey(), m.getUsername());
 						ver_p = crypto.signature_verify(m.getSig_password(), m.getPublicKey(), m.getPassword());
 						if(ver_d && ver_u && ver_p){
 							System.out.println("DUP Signature verified successfully!");
-							server.put(m.getPublicKey(), m.getDomain(), m.getUsername(), m.getPassword());
-							objOut.writeObject(new SignedMessage(null, null, null, "Password saved"));
-						}
-						else {
-							System.out.println("DUP Signature not valid!");
-							objOut.writeObject(new SignedMessage(null, null, null, "Password not saved"));
+							server.put(m.getPublicKey(), m.getDomain(), m.getUsername(), m.getPassword());	
+							
+							Long nounce= server.getNounce();
+							if(nounce != 0){							
+								System.out.println("nouce that is going to be send: "+nounce.toString());
+								byte[] sign_nounce = crypto.signature_generate(nounce.toString().getBytes("UTF-8"), privKey);								
+								resMsg = new SignedMessage("register", pubKey, sign_pub, "success", nounce.toString(), sign_nounce);
+								objOut.writeObject(resMsg);
+							}else{
+								System.out.println("error generating nounce (serverThread)");
+								resMsg = new SignedMessage("register", pubKey, sign_pub, "fail", null, null);
+								objOut.writeObject(resMsg);
+							}
+						} else {
+							System.out.println("Signature not valid!");
+							resMsg = new SignedMessage("register", pubKey, sign_pub, "fail", null, null);
+							objOut.writeObject(resMsg);
 						}
 					}
 					else if(m.getFunctionName().equals("retrieve_password")){
@@ -70,79 +83,64 @@ public class ServerThread extends Thread {
 						}
 						else {
 							System.out.println("Signature not valid!");
+							resMsg = new SignedMessage("register", pubKey, sign_pub, "Regitered with success", null, null);
+							objOut.writeObject(resMsg);
 						}
 					}
 				}
 				else if(input instanceof SignedMessage) {
 					SignedMessage m = (SignedMessage)input;
 
-					if(m.getFunc().equals("register")){
-						if(server.register(m)){
-							//FIXME
-							//faz sentido?? acho q sim mas ja é tarde
-							boolean valid = crypto.signature_verify(m.getSign(), m.getPubKey(), m.getPubKey().getEncoded());
-							
-							if(valid) {
-								System.out.println("Signature verified successfully!");
-								//FIXME add sign for server?
-								SignedMessage m2 = new SignedMessage(null, null, null, "Registered with success");
-								objOut.writeObject(m2);
-							}
-						}
-						else{
-							SignedMessage resMsg = new SignedMessage(null,null,null ,"Fail for some reason");
+					boolean valid = crypto.signature_verify(m.getSign(), m.getPubKey(), m.getPubKey().getEncoded());
+					SignedMessage resMsg;
+					if(!valid){
+						resMsg = new SignedMessage("register", pubKey, sign_pub, "error signature", null, null);
+						objOut.writeObject(resMsg);
+					}
+					if(m.getFunc().equals("register")){			
+						String result = server.register(m).getRes();
+						if(result.equals("success")){
+							System.out.println("Signature verified successfully!");
+							resMsg = new SignedMessage("register", pubKey, sign_pub, "success", null, null);
+							objOut.writeObject(resMsg);
+						}else if (result.equals("used key")){
+							resMsg = new SignedMessage("register",pubKey,sign_pub ,"used key", null, null);
 							objOut.writeObject(resMsg);
 						}
-					}
-					else if(m.getFunc().equals("nounce")){
+					}else if(m.getFunc().equals("nounce")){
 						Long nounce= server.getNounce();
-						if(nounce != 0){
-							boolean valid = crypto.signature_verify(m.getSign(), m.getPubKey(), m.getPubKey().getEncoded());
-							
-							if(valid) {
-								System.out.println("Signature verified successfully!");
-								System.out.println("Thread generated nounce: "+ nounce.toString());
-								
-								//FIXME add sign for server?
-								SignedMessage m2 = new SignedMessage(null, null, null, nounce.toString());
-								objOut.writeObject(m2);
-							}
-						
+						if(nounce != 0){							
+							System.out.println("nouce that is going to be send: "+nounce.toString());
+							//FIXME encriptar o nounce com a privada e so depois fazer sign como na pass?
+							byte[] sign_nounce = crypto.signature_generate(nounce.toString().getBytes("UTF-8"), privKey);
+							resMsg = new SignedMessage("nounce",pubKey,sign_pub, "success", nounce.toString(), sign_nounce);
+							objOut.writeObject(resMsg);
 						}else{
-							//FIXME propagar exceptions do server.register(m)  para aqui e dependendo do catch mandamos uma msg diferente
-							SignedMessage resMsg = new SignedMessage(null,null,null ,"Fail for some reason");
+							resMsg = new SignedMessage("nounce",pubKey,sign_pub ,"fail", null, null);
+							objOut.writeObject(resMsg);
 						}
 						
-					}
-					else if(m.getFunc().equals("close")){
-						Message2 m2 = new Message2("close", null, "Closing");
-						objOut.writeObject(m2);
-						var = false;
+					}else if(m.getFunc().equals("close")){
+						resMsg = new SignedMessage("close",pubKey, sign_pub,"closed", null, null);
+						objOut.writeObject(resMsg);
+						connectionOpen = false;
 						server.close();	
-						//return;
-					}
-				}else if(input instanceof Message2) {
-					Message2 m = (Message2)input;
-					if(m.getFunc().equals("close")){
-						Message2 m2 = new Message2("close", null, "Closing");
-						objOut.writeObject(m2);
-						var = false;
-						server.close();	
-						//return;
 					}
 				}/*else if(input==null){
 					server.close();
 				}*/
 			} catch (ClassNotFoundException e) {
 				e.printStackTrace();
+				connectionOpen = false;
 			} catch (EOFException e) {
 				//e.printStackTrace();
 				System.out.println("Exiting"); //FIXME
-				var = false;
+				connectionOpen = false;
 				//System.exit(0);
 			} catch (IOException e) {
-				System.out.println("IOException");
-				e.printStackTrace();
+				//e.printStackTrace();
+				System.out.println("Exiting");
+				connectionOpen = false;
 			}
 		}
 	}

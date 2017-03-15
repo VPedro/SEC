@@ -1,16 +1,11 @@
 package pt.ist.sec.proj;
 
-import java.io.DataOutputStream;
-import java.io.EOFException;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.security.Key;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
@@ -28,9 +23,11 @@ public class Server {
 
 	private ServerSocket serverSocket;
 	private Map<ArrayList<String>, String> passwords;
-	private Map<ArrayList<String>, PublicKey> publicKeys;	
+	//basta usar uma list de PublicKey.. que eu saiba é so ver se é repetida no register
+	private Map<ArrayList<String>, PublicKey> publicKeys;
 	private Map<PublicKey, Long> nounces;
 	private List<Long> usedNounces;
+	private List<PublicKey> pubKeys;
 	private Crypto crypto;
 
 	PublicKey pubKey;
@@ -119,15 +116,19 @@ public class Server {
 	 * @return 
 	 **/
 
-	public boolean register(SignedMessage msg){ 
-		//cria nouce para qnd for feito init //FIXME
-		if(this.nounces.containsKey(msg.getPubKey())){
-			System.out.println("Client was already registered");
-			return false;
+	public SignedMessage register(SignedMessage msg){ 
+		//Verifica se é repetido o publicKey
+		if(nounces.containsKey(msg.getPubKey())){
+			msg.setRes("used key");
+			System.out.println("already registered, aborted");
+			return msg;
 		}
-		System.out.println("Client registered");
-		return true;
-
+		else{
+			long nounce = getNounce();
+			nounces.put(msg.getPubKey(), nounce);
+			msg.setRes("success");
+			return msg;
+		}
 	}
 
 	public void	put(PublicKey publicKey, byte[] domain, byte[] username, byte[] password){ 
@@ -147,19 +148,6 @@ public class Server {
 		return pass;
 	}
 
-	public String register(Message2 msg){
-		System.out.println("Server executed: Register");
-		//vem com pubKe
-
-
-		//decripts with msg.getPubKey()
-		//verifies hash 
-		//return Anomalous or unauthorized
-		//if ja esta noutro disp return nounce atual
-		long nounce = getNounce();
-		nounces.put(msg.getPubKey(), nounce);
-		return "Success";
-	}
 
 	public String close(){
 		System.out.println("Server executed: Close");
@@ -172,10 +160,9 @@ public class Server {
 			SecureRandom random = SecureRandom.getInstance("SHA1PRNG");
 			res = random.nextLong();
 			while(usedNounces.contains(res)){
-				res = random.nextLong(); //FIXME is it long?
+				res = random.nextLong();
 			}
 			usedNounces.add(res);
-			System.out.println("Server generated nounce: " + res);
 		} catch (NoSuchAlgorithmException e) {
 			e.printStackTrace();
 			return 0;
@@ -191,6 +178,7 @@ public class Server {
 		server.passwords = new HashMap<ArrayList<String>, String>();
 		server.nounces = new HashMap<PublicKey, Long>();
 		server.usedNounces = new ArrayList<Long>();
+		server.pubKeys = new ArrayList<PublicKey>();
 
 		KeyStore ks  = server.getKeyStore("olaola");
 		server.setKeys(ks,"server","olaola");
@@ -209,6 +197,14 @@ public class Server {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+	}
+
+	PublicKey getPubKey() {
+		return pubKey;
+	}
+
+	PrivateKey getPrivKey() {
+		return privKey;
 	}
 
 }
