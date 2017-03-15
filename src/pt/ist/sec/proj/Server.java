@@ -38,13 +38,19 @@ public class Server {
 		publicKeys.put(list, publicKey);
 	}
 	
-	public void putMap(byte[] domain, byte[] username, byte[] password){
-		ArrayList<String> list = new ArrayList<String>(); list.add(crypto.encode_base64(domain)); list.add(crypto.encode_base64(username));
+	public void putMap(PublicKey pubKey, byte[] domain, byte[] username, byte[] password){
+		ArrayList<String> list = new ArrayList<String>();
+		list.add(crypto.encode_base64(pubKey.getEncoded()));
+		list.add(crypto.encode_base64(domain));
+		list.add(crypto.encode_base64(username));
 		passwords.put(list, crypto.encode_base64(password));
 	}
 	
-	public byte[] getMapValue(byte[] domain, byte[] username) throws UnsupportedEncodingException{
-		ArrayList<String> list = new ArrayList<String>(); list.add(crypto.encode_base64(domain)); list.add(crypto.encode_base64(username));
+	public byte[] getMapValue(PublicKey pubKey, byte[] domain, byte[] username) throws UnsupportedEncodingException{
+		ArrayList<String> list = new ArrayList<String>();
+		list.add(crypto.encode_base64(pubKey.getEncoded()));
+		list.add(crypto.encode_base64(domain));
+		list.add(crypto.encode_base64(username));
 		String password_retrieved = passwords.get(list);
 		if(password_retrieved != null){
 			return crypto.decode_base64(password_retrieved);
@@ -57,24 +63,35 @@ public class Server {
 		/** Requirements:
 		 *	Non-Repudiation of any action that alters passwords
 		 *  Confidentiality and Integrity of domains, usernames and passwords 
+		 * @return 
 		 **/
 			
-			public void register(Key publicKey){ 
+			public boolean register(SignedMessage msg){ 
 				/* registers the user in the server. Anomalous or unauthorized
 				 * requests should return an appropriate exception or error code
 				 */
+				//Verifica se é repetido o publicKey
+				
+				//cria nouce para qnd for feito init
+				
+				
+				
+				System.out.println("registered with sucess on server");
+				return true;
+				
 			}
 			
-			public void	put(Key publicKey, byte[] domain, byte[] username, byte[] password){ 
+			public void	put(PublicKey publicKey, byte[] domain, byte[] username, byte[] password){ 
 				System.out.println("Save_password received.");
-				putMap(domain, username, password);
+				putMap(publicKey, domain, username, password);
+				
 			}
 			
-			public byte[] get(Key publicKey, byte[] domain, byte[] username){
+			public byte[] get(PublicKey publicKey, byte[] domain, byte[] username){
 				System.out.println("Retrieve_password received.");
 				byte[] pass = null;
 				try {
-					pass = getMapValue(domain, username);
+					pass = getMapValue(publicKey, domain, username);
 				} catch (UnsupportedEncodingException e) {
 					e.printStackTrace();
 				}
@@ -83,6 +100,9 @@ public class Server {
 	
 	public String register(Message2 msg){
 		System.out.println("register command received");
+		//vem com pubKe
+		
+		
 		//decripts with msg.getPubKey()
 		//verifies hash 
 		//return Anomalous or unauthorized

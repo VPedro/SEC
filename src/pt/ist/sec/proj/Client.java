@@ -25,7 +25,7 @@ public class Client {
 		System.out.print("Choose an option: " );
 	}
 
-	public KeyStore getKeyStore(String pass){ //created with "ola" as password
+	public KeyStore getKeyStore(String pass){ //created with "olaola" as password
 		KeyStore ks = null;
 		try { //If KeyStore file already exists
 			FileInputStream fis = new FileInputStream("keystorefile.jce");	//Open the KeyStore file
@@ -77,27 +77,46 @@ public class Client {
 			option = s.nextInt();
 			System.out.println(" ");
 			switch(option){
+			//LOGIN
 			case 1:
-				System.out.println("Enter your KeyStore password:");
+				System.out.println("Login to your KeyStore:\n\"Username Password\"");
 				s.nextLine();
 				input = s.nextLine();
-				KeyStore ks = c.getKeyStore(input);
-				if(ks==null){
-					System.err.println("wrong password, try again");
+				spl = input.split(" ");
+				if(spl.length != 2){
+					System.err.println("2 parameters expected");
 					continue;
-				} //FIXME returns success?
-				if(l.init(ks, input))
+				}
+				//fix bug, 1 olaola exists, so... 2 olaola devia dar erro e nao dar loadKeys
+				
+				
+				
+				//if only one alias per file, change username to alias
+				KeyStore ks = c.getKeyStore(spl[1]);
+				if(ks==null){
+					System.err.println("login invalid, try again");
+					continue;
+				}
+				if(l.init(ks, spl[0], spl[1]))
 					initiated =true;
 				break;
+			//REGISTER
 			case 2:
-				l.register_user();
+				if(!initiated){
+					System.err.println("you need to call init in order to contact server");
+					continue;
+				}
+				if(l.register_user()){
+					//FIXME
+				}
 				break;
+			//SAVE PASSWORD
 			case 3:
 				if(!initiated){
 					System.err.println("you need to call init in order to contact server");
 					continue;
 				}
-				System.out.println("Enter Domain Username Password");
+				System.out.println("Insert:\n\"Domain Username Password\"");
 				s.nextLine();
 				input = s.nextLine();
 				spl = input.split(" ");
@@ -115,12 +134,13 @@ public class Client {
 				}
 
 				break;
+			//RETRIEVE PASSWORD
 			case 4:
 				if(!initiated){
 					System.err.println("you need to call init in order to contact server");
 					continue;
 				}
-				System.out.println("Enter Domain Username");
+				System.out.println("Insert:\n\"Domain Username\"");
 				s.nextLine();
 				input = s.nextLine();
 				spl = input.split(" ");
@@ -136,6 +156,7 @@ public class Client {
 					System.out.println("Password: " + pass);
 				}
 				break;
+			//CLOSE
 			case 5:
 				/*if(!initiated){
 						System.err.println("you need to call init in order to contact server");
