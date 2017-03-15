@@ -30,6 +30,14 @@ public class Server {
 	private List<PublicKey> pubKeys;
 	private Crypto crypto;
 
+	public Map<PublicKey, Long> getNounces(){
+		return nounces;
+	}
+	
+	public List<Long> getUsedNounces(){
+		return usedNounces;
+	}
+	
 	PublicKey pubKey;
 	PrivateKey privKey;
 
@@ -124,9 +132,10 @@ public class Server {
 			return msg;
 		}
 		else{
-			long nounce = getNounce();
-			nounces.put(msg.getPubKey(), nounce);
+			Long nonce = getNounce();
+			nounces.put(msg.getPubKey(), nonce);
 			msg.setRes("success");
+			msg.setNounce(nonce);
 			return msg;
 		}
 	}

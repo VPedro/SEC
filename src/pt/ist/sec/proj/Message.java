@@ -11,19 +11,24 @@ public class Message implements Serializable{
 	private byte[] sig_domain;
 	private byte[] sig_username;
 	private byte[] sig_password;
+	private byte[] sig_nonce;
 	private byte[] domain;
 	private byte[] username;
 	private byte[] password;
+	private Long nonce;
 	
-	public Message(String functionName, PublicKey key, byte[] sig_domain, byte[] sig_username, byte[] sig_password, byte[] domain, byte[] username, byte[] password) {
+	
+	public Message(String functionName, PublicKey key, byte[] sig_domain, byte[] sig_username, byte[] sig_password, byte[] domain, byte[] username, byte[] password, Long nonce, byte[] sig_nonce) {
 		this.functionName = functionName;
 		this.publicKey = key;
 		this.sig_domain = sig_domain;
 		this.sig_username = sig_username;
 		this.sig_password = sig_password;
+		this.sig_nonce = sig_nonce;
 		this.domain = domain;
 		this.username = username;
 		this.password = password;
+		this.nonce = nonce;
 	}
 	
 	public String getFunctionName() {
@@ -79,6 +84,22 @@ public class Message implements Serializable{
 
 	public void setSig_password(byte[] sig_password) {
 		this.sig_password = sig_password;
+	}
+
+	public byte[] getSig_nonce() {
+		return sig_nonce;
+	}
+
+	public void setSig_nonce(byte[] sig_nonce) {
+		this.sig_nonce = sig_nonce;
+	}
+
+	public Long getNonce() {
+		return nonce;
+	}
+
+	public void setNonce(Long nonce) {
+		this.nonce = nonce;
 	}
 	
 }

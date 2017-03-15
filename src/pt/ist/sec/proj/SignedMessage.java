@@ -10,11 +10,11 @@ public class SignedMessage implements Serializable{
 	private PublicKey pubKey;
 	private byte[] sign;
 	private String res;
-	private String nounce;
+	private Long nounce;
 	private byte[] signNounce;
 	
 	//FIXME add nounce(encrip) + sign(nounce(encrip))
-	public SignedMessage(String func, PublicKey pubKey, byte[] sign, String res, String nounce, byte[] signNounce) {
+	public SignedMessage(String func, PublicKey pubKey, byte[] sign, String res, Long nounce, byte[] signNounce) {
 		this.func = func;
 		this.pubKey = pubKey;
 		this.sign = sign;
@@ -52,10 +52,10 @@ public class SignedMessage implements Serializable{
 		this.res = res;
 	}
 	
-	public String getNounce() {
+	public Long getNounce() {
 		return nounce;
 	}
-	public void setNounce(String nounce) {
+	public void setNounce(Long nounce) {
 		this.nounce = nounce;
 	}
 	

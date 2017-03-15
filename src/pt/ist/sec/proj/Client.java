@@ -104,11 +104,12 @@ public class Client {
 					System.err.println("you need to call init in order to contact server");
 					continue;
 				}
-				if(l.register_user()){
+				/*if(l.register_user()){
 					System.out.println("Registered with success");
 				}else {
 					System.out.println("You were already registered in the server");
-				}
+				}*/
+				l.register_user();
 				break;
 			//SAVE PASSWORD
 			case 3:

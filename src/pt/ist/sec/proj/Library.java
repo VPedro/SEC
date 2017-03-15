@@ -24,7 +24,7 @@ public class Library {
 	static PublicKey pubKey;
 	static PrivateKey privKey;
 	
-	private long nextNounce;
+	private Long nextNounce;
 	
 	Crypto crypto;
 
@@ -41,7 +41,7 @@ public class Library {
 			inData = new DataInputStream(client.getInputStream());
 			setKeys(keystore, alias, password);
 			
-			nextNounce = getNonce();
+			//nextNounce = getNonce();
 			
 			return true;
 
@@ -57,7 +57,7 @@ public class Library {
 		}
 	}
 
-	
+	/*
 	private long getNonce() {
 		long res = 0;
 		
@@ -69,16 +69,16 @@ public class Library {
 			outObject.writeObject(msg);
 			resMsg = (SignedMessage)inObject.readObject();
 
-			boolean valid = crypto.signature_verify(resMsg.getSignNounce(), resMsg.getPubKey(),  resMsg.getNounce().getBytes("UTF-8"));
+			boolean valid = crypto.signature_verify(resMsg.getSignNounce(), resMsg.getPubKey(),  resMsg.getNounce().toString().getBytes("UTF-8"));
 			if(valid ){
 				
 				if(resMsg.getRes().equals("fail")){
 					System.out.println("Could not save the password");
 				}else{
-					boolean validNounce = crypto.signature_verify(resMsg.getSignNounce(), resMsg.getPubKey(),  resMsg.getNounce().getBytes("UTF-8"));
+					boolean validNounce = crypto.signature_verify(resMsg.getSignNounce(), resMsg.getPubKey(),  resMsg.getNounce().toString().getBytes("UTF-8"));
 					if(validNounce){
 						//save received nounce
-						Long l = Long.valueOf(resMsg.getNounce().toString()).longValue();
+						Long l = resMsg.getNounce();
 						System.out.println("nounce reveived: " + l);
 						nextNounce = l;
 					}
@@ -94,7 +94,7 @@ public class Library {
 		
 		return res;
 	}
-
+*/
 
 	private void setKeys(KeyStore ks, String alias, String password) {
 		try {
@@ -110,59 +110,79 @@ public class Library {
 	}
 
 
-	public boolean register_user(){
+	public void register_user(){
 		byte[] sig_pub = crypto.signature_generate(pubKey.getEncoded(), privKey);
 		
-		SignedMessage msg = new SignedMessage("register", pubKey, sig_pub,  null, null, null);
+		SignedMessage msg = new SignedMessage("register", pubKey, sig_pub, null, null, null);
 		SignedMessage resMsg = null;
 		try {
 			outObject.writeObject(msg);
 			resMsg = (SignedMessage)inObject.readObject();
 			if(resMsg.getRes().equals("success")){
-				long n = 0;
-				nextNounce = n;
+				boolean b = crypto.signature_verify(resMsg.getSignNounce(), resMsg.getPubKey(), resMsg.getNounce().toString().getBytes());
+				if (b){
+					nextNounce = resMsg.getNounce();
+					System.out.println("NEXT NONCE: " + nextNounce);
+				}
+				//long n = 0;
+				//nextNounce = n;
 				System.out.println("Registered in server with success");
-				return true;
+				//return true;
 			}else if(resMsg.getRes().equals("used key")){
+				boolean b = crypto.signature_verify(resMsg.getSignNounce(), resMsg.getPubKey(), resMsg.getNounce().toString().getBytes());
+				if (b){
+					nextNounce = resMsg.getNounce();
+					System.out.println("NEXT NONCE: " + nextNounce);
+				}
 				System.out.println("You are already registerd");
-				return false;
+				//return false;
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
 		}
-		return false;	
+		//return false;	
 	}
 	
-	public Message createMessage(String s, byte[] domain, byte[] username, byte[] password) {
+	public Message createMessage(String s, byte[] domain, byte[] username, byte[] password, Long nonce) {
 		byte[] sig_d = crypto.signature_generate(domain, privKey);
 		byte[] sig_u = crypto.signature_generate(username, privKey);
+		byte[] sig_nonce = crypto.signature_generate(nonce.toString().getBytes(), privKey);
 		byte[] p = crypto.encrypt(password, pubKey);
 		byte[] sig_p = crypto.signature_generate(p, privKey);
 		
-		return new Message(s, pubKey, sig_d, sig_u, sig_p, domain, username, p);
+		return new Message(s, pubKey, sig_d, sig_u, sig_p, domain, username, p, nonce, sig_nonce);
 	}
 
 	public void save_password(byte[] domain, byte[] username, byte[] password) throws IOException {
-		Message msg = createMessage("save_password", domain, username, password);
+		Message msg = createMessage("save_password", domain, username, password, nextNounce);
 		SignedMessage resMsg = null;
 		try {
+			System.out.println("ENTREI1");
 			outObject.writeObject(msg);
+			System.out.println("ENTREI2");
 			resMsg = (SignedMessage)inObject.readObject();
+			System.out.println("ENTREI3");
 			
 			boolean valid = crypto.signature_verify(resMsg.getSign(), resMsg.getPubKey(), resMsg.getPubKey().getEncoded());
 			if(valid){
+				System.out.println("ENTREI");
 				if(resMsg.getRes().equals("success")){
 					System.out.println("Password saved with success");
-					boolean validNounce = crypto.signature_verify(resMsg.getSignNounce(), resMsg.getPubKey(),  resMsg.getNounce().getBytes("UTF-8"));
+					boolean validNounce = crypto.signature_verify(resMsg.getSignNounce(), resMsg.getPubKey(),  resMsg.getNounce().toString().getBytes("UTF-8"));
 					if(validNounce){
 						//save new nounce
-						Long l = Long.valueOf(resMsg.getNounce().toString()).longValue();
+						Long l = resMsg.getNounce();
 						System.out.println("nounce reveived: " + l);
 						nextNounce = l;
+						System.out.println("NEXT NONCE: " + nextNounce);
 					}
-				}else{
+					else {
+						System.out.println("Nonce not valid");
+					}
+				}
+				else{
 					System.out.println("Error saving your password");
 				}
 			}
@@ -176,8 +196,7 @@ public class Library {
 	}
 	
 	public String retrieve_password(byte[] domain, byte[] username){
-		Message msg = createMessage("retrieve_password", domain, username, null);
-
+		Message msg = createMessage("retrieve_password", domain, username, null, nextNounce);
 		Message m = null;
 		try {
 			outObject.writeObject(msg);
@@ -189,12 +208,23 @@ public class Library {
 		}
 		
 		//TODO verify signature and decript if valid
-		byte[] b = crypto.decrypt(m.getPassword(), privKey);
-		if (b == null){ return null;}
-		try {
-			return new String(b, "UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			e.printStackTrace();
+		System.out.println("BEFORE VERIFICATION");
+		boolean ver_p, ver_n;
+		ver_p = crypto.signature_verify(m.getSig_password(), m.getPublicKey(), m.getPassword());
+		ver_n = crypto.signature_verify(m.getSig_nonce(), m.getPublicKey(), m.getNonce().toString().getBytes());
+		System.out.println(m.getSig_password() + " " + m.getPublicKey() + " " + m.getPassword());
+		System.out.println(m.getSig_nonce() + " " + m.getPublicKey() + " " + m.getNonce().toString().getBytes());
+		if(ver_p && ver_n){ 	
+			System.out.println("INSIDE IF");
+			nextNounce = m.getNonce();
+			System.out.println("NEXT NONCE: " + nextNounce);
+			byte[] b = crypto.decrypt(m.getPassword(), privKey);
+			if (b == null){return null;}
+			try {
+				return new String(b, "UTF-8");
+			} catch (UnsupportedEncodingException e) {
+				e.printStackTrace();
+			}
 		}
 		return null;
 	}
