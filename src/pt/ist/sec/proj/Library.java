@@ -29,7 +29,7 @@ public class Library {
 	
 	Crypto crypto;
 
-	public boolean init(KeyStore keystore, String password){
+	public boolean init(KeyStore keystore, String alias, String password){
 		//start socket
 		String serverName = "";
 		int serverPort = 1025;
@@ -40,7 +40,7 @@ public class Library {
 			inObject = new ObjectInputStream(client.getInputStream());
 			outData = new DataOutputStream(client.getOutputStream());
 			inData = new DataInputStream(client.getInputStream());
-			setKeys(keystore, password);
+			setKeys(keystore, alias, password);
 			return true;
 
 		} catch (UnknownHostException e) {
@@ -56,36 +56,40 @@ public class Library {
 	}
 
 	
-	private void setKeys(KeyStore ks, String password) {
+	private void setKeys(KeyStore ks, String alias, String password) {
 		try {
-			//Get the key with the given alias.
-			String alias="rgateway";
-			
+			//Get the keys for the given alias.			
 			pubKey = ks.getCertificate(alias).getPublicKey();
 			privKey = (PrivateKey) ks.getKey(alias, password.toCharArray());
 			
 		} catch (Exception e){
-			
+			e.printStackTrace();
+			System.out.println("foi aqui");
 		}
 		
 	}
 
 
-	public void register_user(){
+	public boolean register_user(){
 		/* registers  the  user  on  the  server,  initializing the  
 		 * required  data structures to securely store the password
 		 */
-		Message2 msg = new Message2("register", pubKey, null);
-
-		Message2 resMsg = null;
+		//SignedMessage msg = createRegMessage("");
+		byte[] sig_pub = crypto.signature_generate(pubKey.getEncoded(), privKey);
+		
+		SignedMessage msg = new SignedMessage("register", pubKey, sig_pub,  null);
+		SignedMessage resMsg = null;
 		try {
 			outObject.writeObject(msg);
-			resMsg = (Message2)inObject.readObject();
+			resMsg = (SignedMessage)inObject.readObject();
 			System.out.println("result from server: " + resMsg.getRes());
+			return true;
 		} catch (IOException e) {
 			e.printStackTrace();
+			return false;
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
+			return false;
 		}
 		
 	}
@@ -103,6 +107,8 @@ public class Library {
 		Message msg = createMessage("save_password", domain, username, password);
 		outObject.writeObject(msg);
 	}
+	
+	//SIGN_VERIFY recebe as chaves de quem? ou dos dois?
 	
 	public String retrieve_password(byte[] domain, byte[] username){
 		Message msg = createMessage("retrieve_password", domain, username, null);

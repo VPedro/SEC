@@ -7,11 +7,16 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 
 public class ServerThread extends Thread {
 
 	private Socket socket;
 	private Server server;
+	
+	static PublicKey pubKey;
+	static PrivateKey privKey;
 
 	public ServerThread(Socket clientSocket, Server server) {
 		this.socket = clientSocket;
@@ -29,6 +34,7 @@ public class ServerThread extends Thread {
 			System.out.println("IOException");;
 		}
 		Object input;
+		//FIXME change name to connectionOpen
 		boolean var = true;
 		boolean ver_d, ver_u, ver_p;
 		while (var) {
@@ -65,15 +71,42 @@ public class ServerThread extends Thread {
 						}
 					}
 				}
-				else if(input instanceof Message2) {
-					Message2 m = (Message2)input;
+				else if(input instanceof SignedMessage) {
+					SignedMessage m = (SignedMessage)input;
 
 					if(m.getFunc().equals("register")){
-						String res = server.register(m); //FIXME
-						Message2 m2 = new Message2("register",null,res);
-						objOut.writeObject(m2);
+						if(server.register(m)){
+							//FIXME
+							//faz sentido?? acho q sim mas ja é tarde
+							boolean valid = crypto.signature_verify(m.getSign(), m.getPubKey(), m.getPubKey().getEncoded());
+							
+							if(valid) {
+								System.out.println("Signature verified successfully!");
+								//FIXME add sign for server?
+								SignedMessage m2 = new SignedMessage(null, null, null, "Regitered with success");
+								objOut.writeObject(m2);
+							}
+							
+							//Message2 m2 = new Message2("register",null,res);
+							//objOut.writeObject(resMsg);
+							
+							//return (String func, PublicKey pubKey, byte[] sign, String res) 
+						}else{
+							//FIXME propagar exceptions do server.register(m)  para aqui e dependendo do catch mandamos uma msg diferente
+							SignedMessage resMsg = new SignedMessage(null,null,null ,"Fail for some reason");
+						}
+						
 					}
 					else if(m.getFunc().equals("close")){
+						Message2 m2 = new Message2("close", null, "Closing");
+						objOut.writeObject(m2);
+						var = false;
+						server.close();	
+						//return;
+					}
+				}else if(input instanceof Message2) {
+					Message2 m = (Message2)input;
+					if(m.getFunc().equals("close")){
 						Message2 m2 = new Message2("close", null, "Closing");
 						objOut.writeObject(m2);
 						var = false;
