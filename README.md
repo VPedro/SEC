@@ -24,6 +24,8 @@ SEC Project
 `Retrieve must encript data`<br>
 `Library calls getNounce on Init`<br>
 `Verify FIXME's`<br>
+`Verify server signatures `<br>
+`send new nounce on every func (therad calling server.getNounce e depois manda isso  encriptado com a priv Serv e a assinado pelo serv`<br>
 
 `HardMode:`<br>
   `Encrypt Domain and Username`<br>

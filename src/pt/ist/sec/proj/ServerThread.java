@@ -34,6 +34,9 @@ public class ServerThread extends Thread {
 			System.out.println("IOException");;
 		}
 		Object input;
+		pubKey = server.getPubKey();
+		privKey = server.getPrivKey();
+		
 		//FIXME change name to connectionOpen
 		boolean var = true;
 		boolean ver_d, ver_u, ver_p;
@@ -55,6 +58,9 @@ public class ServerThread extends Thread {
 						}
 						else {
 							System.out.println("Signature not valid!");
+							byte[] sig_pub = crypto.signature_generate(pubKey.getEncoded(), privKey);
+							SignedMessage resMsg = new SignedMessage("register", pubKey, sig_pub, "Regitered with success");
+							objOut.writeObject(resMsg);
 						}
 					}
 					else if(m.getFunctionName().equals("retrieve_password")){
@@ -68,69 +74,47 @@ public class ServerThread extends Thread {
 						}
 						else {
 							System.out.println("Signature not valid!");
+							byte[] sig_pub = crypto.signature_generate(pubKey.getEncoded(), privKey);
+							SignedMessage resMsg = new SignedMessage("register", pubKey, sig_pub, "Regitered with success");
+							objOut.writeObject(resMsg);
 						}
 					}
 				}
 				else if(input instanceof SignedMessage) {
 					SignedMessage m = (SignedMessage)input;
-
-					if(m.getFunc().equals("register")){
-						if(server.register(m)){
-							//FIXME
-							//faz sentido?? acho q sim mas ja é tarde
-							boolean valid = crypto.signature_verify(m.getSign(), m.getPubKey(), m.getPubKey().getEncoded());
-							
-							if(valid) {
-								System.out.println("Signature verified successfully!");
-								//FIXME add sign for server?
-								SignedMessage m2 = new SignedMessage(null, null, null, "Regitered with success");
-								objOut.writeObject(m2);
-							}
-							
-							//Message2 m2 = new Message2("register",null,res);
-							//objOut.writeObject(resMsg);
-							
-							//return (String func, PublicKey pubKey, byte[] sign, String res) 
-						}else{
-							//FIXME propagar exceptions do server.register(m)  para aqui e dependendo do catch mandamos uma msg diferente
-							SignedMessage resMsg = new SignedMessage(null,null,null ,"Fail for some reason");
+					boolean valid = crypto.signature_verify(m.getSign(), m.getPubKey(), m.getPubKey().getEncoded());
+					byte[] sig_pub = crypto.signature_generate(pubKey.getEncoded(), privKey);
+					SignedMessage resMsg;
+					if(!valid){
+						resMsg = new SignedMessage("register", pubKey, sig_pub, "error signature");
+						objOut.writeObject(resMsg);
+					}
+					if(m.getFunc().equals("register")){			
+						String result = server.register(m).getRes();
+						if(result.equals("success")){
+							System.out.println("Signature verified successfully!");
+							resMsg = new SignedMessage("register", pubKey, sig_pub, "Regitered with success");
+							objOut.writeObject(resMsg);
+						}else if (result.equals("used key")){
+							resMsg = new SignedMessage("register",pubKey,sig_pub ,"used key");
+							objOut.writeObject(resMsg);
 						}
-						
 					}else if(m.getFunc().equals("nounce")){
 						Long nounce= server.getNounce();
-						if(nounce != 0){
-							boolean valid = crypto.signature_verify(m.getSign(), m.getPubKey(), m.getPubKey().getEncoded());
-							
-							if(valid) {
-								System.out.println("Signature verified successfully!");
-								System.out.println("Thread generated nounce: "+ nounce.toString());
-								
-								//FIXME add sign for server?
-								SignedMessage m2 = new SignedMessage(null, null, null, nounce.toString());
-								objOut.writeObject(m2);
-							}
-						
+						if(nounce != 0){							
+							System.out.println("nouce that is going to be send: "+nounce.toString());
+							resMsg = new SignedMessage("nounce",pubKey,sig_pub, nounce.toString());
+							objOut.writeObject(resMsg);
 						}else{
-							//FIXME propagar exceptions do server.register(m)  para aqui e dependendo do catch mandamos uma msg diferente
-							SignedMessage resMsg = new SignedMessage(null,null,null ,"Fail for some reason");
+							resMsg = new SignedMessage("nounce",pubKey,sig_pub ,"Fail for some reason");
+							objOut.writeObject(resMsg);
 						}
 						
-					}
-					else if(m.getFunc().equals("close")){
-						Message2 m2 = new Message2("close", null, "Closing");
-						objOut.writeObject(m2);
+					}else if(m.getFunc().equals("close")){
+						resMsg = new SignedMessage("close",pubKey, sig_pub,"closed");
+						objOut.writeObject(resMsg);
 						var = false;
 						server.close();	
-						//return;
-					}
-				}else if(input instanceof Message2) {
-					Message2 m = (Message2)input;
-					if(m.getFunc().equals("close")){
-						Message2 m2 = new Message2("close", null, "Closing");
-						objOut.writeObject(m2);
-						var = false;
-						server.close();	
-						//return;
 					}
 				}/*else if(input==null){
 					server.close();

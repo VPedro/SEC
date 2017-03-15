@@ -93,7 +93,6 @@ public class Client {
 				}
 				//fix bug, 1 olaola exists, so... 2 olaola devia dar erro e nao dar loadKeys
 				
-				
 				//if only one alias per file, change username to alias
 				KeyStore ks = c.getKeyStore(spl[1]);
 				if(ks==null){

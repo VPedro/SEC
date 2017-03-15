@@ -28,9 +28,11 @@ public class Server {
 
 	private ServerSocket serverSocket;
 	private Map<ArrayList<String>, String> passwords;
-	private Map<ArrayList<String>, PublicKey> publicKeys;	
+	//basta usar uma list de PublicKey.. que eu saiba é so ver se é repetida no register
+	private Map<ArrayList<String>, PublicKey> publicKeys;
 	private Map<PublicKey, Long> nounces;
 	private List<Long> usedNounces;
+	private List<PublicKey> pubKeys;
 	private Crypto crypto;
 
 	PublicKey pubKey;
@@ -119,18 +121,23 @@ public class Server {
 	 * @return 
 	 **/
 
-	public boolean register(SignedMessage msg){ 
+	public SignedMessage register(SignedMessage msg){ 
 		/* registers the user in the server. Anomalous or unauthorized
 		 * requests should return an appropriate exception or error code
 		 */
+
 		//Verifica se é repetido o publicKey
-
-		//cria nouce para qnd for feito init
-
-
-
-		System.out.println("registered with sucess on server");
-		return true;
+		if(pubKeys.contains(msg.getPubKey())){
+			msg.setRes("used key");
+			System.out.println("already registered, aborted");
+			return msg;
+		}else{
+			long nounce = getNounce();
+			nounces.put(msg.getPubKey(), nounce);
+			msg.setRes("success");
+			return msg;
+		}
+		
 
 	}
 
@@ -151,20 +158,6 @@ public class Server {
 		return pass;
 	}
 
-	public String register(Message2 msg){
-		System.out.println("register command received");
-		//vem com pubKe
-
-
-		//decripts with msg.getPubKey()
-		//verifies hash 
-		//return Anomalous or unauthorized
-		//if ja esta noutro disp return nounce atual
-		long nounce = getNounce();
-		nounces.put(msg.getPubKey(), nounce);
-		return "Success";
-	}
-
 	public String close(){
 		System.out.println("close command received");
 		return "Success";
@@ -176,10 +169,9 @@ public class Server {
 			SecureRandom random = SecureRandom.getInstance("SHA1PRNG");
 			res = random.nextLong();
 			while(usedNounces.contains(res)){
-				res = random.nextLong(); //FIXME is it long?
+				res = random.nextLong();
 			}
 			usedNounces.add(res);
-			System.out.println("Server generated nounce: " + res);
 		} catch (NoSuchAlgorithmException e) {
 			e.printStackTrace();
 			return 0;
@@ -195,6 +187,7 @@ public class Server {
 		server.passwords = new HashMap<ArrayList<String>, String>();
 		server.nounces = new HashMap<PublicKey, Long>();
 		server.usedNounces = new ArrayList<Long>();
+		server.pubKeys = new ArrayList<PublicKey>();
 
 		KeyStore ks  = server.getKeyStore("olaola");
 		server.setKeys(ks,"server","olaola");
@@ -213,6 +206,14 @@ public class Server {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+	}
+
+	PublicKey getPubKey() {
+		return pubKey;
+	}
+
+	PrivateKey getPrivKey() {
+		return privKey;
 	}
 
 }

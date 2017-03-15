@@ -112,8 +112,14 @@ public class Library {
 		try {
 			outObject.writeObject(msg);
 			resMsg = (SignedMessage)inObject.readObject();
-			System.out.println("result from server: " + resMsg.getRes());
-			return true;
+			if(resMsg.getRes().equals("success")){
+				System.out.println("Registered in server with success");
+				return true;
+			}else if(resMsg.getRes().equals("used key")){
+				System.out.println("You are already registerd");
+				return false;
+			}
+			return false;
 		} catch (IOException e) {
 			//e.printStackTrace();
 			return false;
@@ -167,17 +173,13 @@ public class Library {
 	}
 	
 	public void close(){
-		/* concludes the current session of commands with the client library */
 		
-		//removeKeys
-		
-		//FIXME enviamos tambem a public key para apagar de um map loggedUsers?
-		Message2 msg = new Message2("close", pubKey, null);
-
-		Message2 resMsg = null;
+		byte[] sig_pub = crypto.signature_generate(pubKey.getEncoded(), privKey);
+		SignedMessage msg = new SignedMessage("close",pubKey, sig_pub,null);
+		SignedMessage resMsg = null;
 		try {
 			outObject.writeObject(msg);
-			resMsg = (Message2)inObject.readObject();
+			resMsg = (SignedMessage)inObject.readObject();
 			System.out.println("result from server: " + resMsg.getRes());
 			//FIXME close socket
 			//client.close();
