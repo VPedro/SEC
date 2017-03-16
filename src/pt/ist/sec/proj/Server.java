@@ -127,6 +127,9 @@ public class Server {
 	public SignedMessage register(SignedMessage msg){ 
 		//Verifica se é repetido o publicKey
 		if(nounces.containsKey(msg.getPubKey())){
+			Long nonce = getNounce();
+			nounces.put(msg.getPubKey(), nonce);
+			msg.setNounce(nonce);
 			msg.setRes("used key");
 			System.out.println("already registered, aborted");
 			return msg;

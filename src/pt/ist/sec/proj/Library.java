@@ -159,22 +159,18 @@ public class Library {
 		Message msg = createMessage("save_password", domain, username, password, nextNounce);
 		SignedMessage resMsg = null;
 		try {
-			System.out.println("ENTREI1");
 			outObject.writeObject(msg);
-			System.out.println("ENTREI2");
 			resMsg = (SignedMessage)inObject.readObject();
-			System.out.println("ENTREI3");
 			
 			boolean valid = crypto.signature_verify(resMsg.getSign(), resMsg.getPubKey(), resMsg.getPubKey().getEncoded());
 			if(valid){
-				System.out.println("ENTREI");
 				if(resMsg.getRes().equals("success")){
 					System.out.println("Password saved with success");
 					boolean validNounce = crypto.signature_verify(resMsg.getSignNounce(), resMsg.getPubKey(),  resMsg.getNounce().toString().getBytes("UTF-8"));
 					if(validNounce){
 						//save new nounce
 						Long l = resMsg.getNounce();
-						System.out.println("nounce reveived: " + l);
+						System.out.println("nounce received: " + l);
 						nextNounce = l;
 						System.out.println("NEXT NONCE: " + nextNounce);
 					}
@@ -208,14 +204,10 @@ public class Library {
 		}
 		
 		//TODO verify signature and decript if valid
-		System.out.println("BEFORE VERIFICATION");
 		boolean ver_p, ver_n;
 		ver_p = crypto.signature_verify(m.getSig_password(), m.getPublicKey(), m.getPassword());
 		ver_n = crypto.signature_verify(m.getSig_nonce(), m.getPublicKey(), m.getNonce().toString().getBytes());
-		System.out.println(m.getSig_password() + " " + m.getPublicKey() + " " + m.getPassword());
-		System.out.println(m.getSig_nonce() + " " + m.getPublicKey() + " " + m.getNonce().toString().getBytes());
 		if(ver_p && ver_n){ 	
-			System.out.println("INSIDE IF");
 			nextNounce = m.getNonce();
 			System.out.println("NEXT NONCE: " + nextNounce);
 			byte[] b = crypto.decrypt(m.getPassword(), privKey);
