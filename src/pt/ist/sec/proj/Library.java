@@ -41,7 +41,8 @@ public class Library {
 			inData = new DataInputStream(client.getInputStream());
 			setKeys(keystore, alias, password);
 			
-			//nextNounce = getNonce();
+			nextNounce = getNonce();
+			System.out.println("NOOOOOOOOOOOOOONCE: " + nextNounce);
 			
 			return true;
 
@@ -57,10 +58,8 @@ public class Library {
 		}
 	}
 
-	/*
-	private long getNonce() {
-		long res = 0;
-		
+	
+	private long getNonce() {		
 		byte[] sig_pub = crypto.signature_generate(pubKey.getEncoded(), privKey);
 		
 		SignedMessage msg = new SignedMessage("nounce", pubKey, sig_pub,  null, null, null);
@@ -80,7 +79,8 @@ public class Library {
 						//save received nounce
 						Long l = resMsg.getNounce();
 						System.out.println("nounce reveived: " + l);
-						nextNounce = l;
+						return l;
+						
 					}
 				}
 			}		
@@ -92,9 +92,9 @@ public class Library {
 			return 0;
 		}
 		
-		return res;
+		return 0;
 	}
-*/
+
 
 	private void setKeys(KeyStore ks, String alias, String password) {
 		try {
@@ -151,7 +151,6 @@ public class Library {
 		byte[] sig_nonce = crypto.signature_generate(nonce.toString().getBytes(), privKey);
 		byte[] p = crypto.encrypt(password, pubKey);
 		byte[] sig_p = crypto.signature_generate(p, privKey);
-		
 		return new Message(s, pubKey, sig_d, sig_u, sig_p, domain, username, p, nonce, sig_nonce);
 	}
 
@@ -161,7 +160,10 @@ public class Library {
 		try {
 			outObject.writeObject(msg);
 			resMsg = (SignedMessage)inObject.readObject();
-			
+			if(resMsg.getRes().equals("register_fail")){
+				System.out.println("You are not registered");
+				return;
+			}
 			boolean valid = crypto.signature_verify(resMsg.getSign(), resMsg.getPubKey(), resMsg.getPubKey().getEncoded());
 			if(valid){
 				if(resMsg.getRes().equals("success")){
@@ -193,17 +195,22 @@ public class Library {
 	
 	public String retrieve_password(byte[] domain, byte[] username){
 		Message msg = createMessage("retrieve_password", domain, username, null, nextNounce);
-		Message m = null;
+		Object o = null;
 		try {
 			outObject.writeObject(msg);
-			m = (Message)inObject.readObject();
+			o = (Object)inObject.readObject();
 		} catch (IOException e) {
 			e.printStackTrace();
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
 		}
-		
-		//TODO verify signature and decript if valid
+		if(o instanceof SignedMessage){
+			if(((SignedMessage) o).getRes().equals("register_fail")){
+				System.out.println("You are not registered");
+				return "fail";
+			}
+		}
+		Message m = (Message)o;
 		boolean ver_p = false, ver_n;
 		if(m.getPassword() != null) {
 			ver_p = crypto.signature_verify(m.getSig_password(), m.getPublicKey(), m.getPassword());

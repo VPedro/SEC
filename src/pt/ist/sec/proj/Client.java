@@ -119,10 +119,6 @@ public class Client {
 					System.err.println("you need to call init in order to contact server");
 					continue;
 				}
-				if(!registered){
-					System.err.println("you need to call register before doing that option");
-					continue;
-				}
 				System.out.println("Insert:\n\"Domain Username Password\"");
 				s.nextLine();
 				input = s.nextLine();
@@ -147,10 +143,6 @@ public class Client {
 					System.err.println("you need to call init in order to contact server");
 					continue;
 				}
-				if(!registered){
-					System.err.println("you need to call register before doing that option");
-					continue;
-				}
 				System.out.println("Insert:\n\"Domain Username\"");
 				s.nextLine();
 				input = s.nextLine();
@@ -162,6 +154,9 @@ public class Client {
 				String pass = l.retrieve_password(spl[0].getBytes(), spl[1].getBytes());
 				if(pass == null){
 					System.out.println("No password found!");
+				}
+				else if(pass.equals("fail")){
+					break;
 				}
 				else {
 					System.out.println("Password: " + pass);

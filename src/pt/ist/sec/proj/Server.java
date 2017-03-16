@@ -23,11 +23,9 @@ public class Server {
 
 	private ServerSocket serverSocket;
 	private Map<ArrayList<String>, String> passwords;
-	//basta usar uma list de PublicKey.. que eu saiba é so ver se é repetida no register
-	private Map<ArrayList<String>, PublicKey> publicKeys;
 	private Map<PublicKey, Long> nounces;
+	private List<PublicKey> registeredKeys;
 	private List<Long> usedNounces;
-	private List<PublicKey> pubKeys;
 	private Crypto crypto;
 
 	public Map<PublicKey, Long> getNounces(){
@@ -40,17 +38,6 @@ public class Server {
 	
 	PublicKey pubKey;
 	PrivateKey privKey;
-
-	public PublicKey getKey(byte[] domain, byte[] username){
-		ArrayList<String> list = new ArrayList<String>(); list.add(crypto.encode_base64(domain)); list.add(crypto.encode_base64(username));
-		PublicKey key_retrieved = publicKeys.get(list);
-		return key_retrieved;
-	}
-
-	public void putKey(byte[] domain, byte[] username, PublicKey publicKey){
-		ArrayList<String> list = new ArrayList<String>(); list.add(crypto.encode_base64(domain)); list.add(crypto.encode_base64(username));
-		publicKeys.put(list, publicKey);
-	}
 
 	public void putMap(PublicKey pubKey, byte[] domain, byte[] username, byte[] password){
 		ArrayList<String> list = new ArrayList<String>();
@@ -126,7 +113,7 @@ public class Server {
 
 	public SignedMessage register(SignedMessage msg){ 
 		//Verifica se é repetido o publicKey
-		if(nounces.containsKey(msg.getPubKey())){
+		if(registeredKeys.contains(msg.getPubKey())){
 			Long nonce = getNounce();
 			nounces.put(msg.getPubKey(), nonce);
 			msg.setNounce(nonce);
@@ -137,6 +124,7 @@ public class Server {
 		else{
 			Long nonce = getNounce();
 			nounces.put(msg.getPubKey(), nonce);
+			registeredKeys.add(msg.getPubKey());
 			msg.setRes("success");
 			msg.setNounce(nonce);
 			return msg;
@@ -190,7 +178,7 @@ public class Server {
 		server.passwords = new HashMap<ArrayList<String>, String>();
 		server.nounces = new HashMap<PublicKey, Long>();
 		server.usedNounces = new ArrayList<Long>();
-		server.pubKeys = new ArrayList<PublicKey>();
+		server.registeredKeys = new ArrayList<PublicKey>();
 
 		KeyStore ks  = server.getKeyStore("olaola");
 		server.setKeys(ks,"server","olaola");
@@ -217,6 +205,14 @@ public class Server {
 
 	PrivateKey getPrivKey() {
 		return privKey;
+	}
+
+	public List<PublicKey> getRegisteredKeys() {
+		return registeredKeys;
+	}
+
+	public void setRegisteredKeys(List<PublicKey> registeredKeys) {
+		this.registeredKeys = registeredKeys;
 	}
 
 }

@@ -1,6 +1,5 @@
 package pt.ist.sec.proj;
 
-import java.awt.image.PixelInterleavedSampleModel;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -49,20 +48,25 @@ public class ServerThread extends Thread {
 				if (input instanceof Message) {
 					Message m = (Message)input;
 					SignedMessage resMsg;
+					if(!server.getRegisteredKeys().contains(m.getPublicKey())){
+						System.out.println("Please Register first!");
+						resMsg = new SignedMessage("nounce",pubKey,sign_pub ,"register_fail", null, null);
+						objOut.writeObject(resMsg);
+						continue;
+					}
 					if(m.getFunctionName().equals("save_password")){
 						ver_d = crypto.signature_verify(m.getSig_domain(), m.getPublicKey(), m.getDomain());
 						ver_u = crypto.signature_verify(m.getSig_username(), m.getPublicKey(), m.getUsername());
 						ver_p = crypto.signature_verify(m.getSig_password(), m.getPublicKey(), m.getPassword());
 						ver_n = crypto.signature_verify(m.getSig_nonce(), m.getPublicKey(), m.getNonce().toString().getBytes());
 						if(ver_d && ver_u && ver_p && ver_n){
-							System.out.println("PRINTING NOUNCES");
 							/*for(Long l : server.getUsedNounces()){
 								System.out.println(l);
 							}
 							System.out.println("CONTAINS THIS NONCE: " + m.getNonce() + " ???? => " + server.getUsedNounces().contains(m.getNonce()));*/
 							System.out.println("EXPECTED NONCE: " + server.getNounces().get(m.getPublicKey()));
 							System.out.println("NONCE: " + m.getNonce());
-							Long n_compare = server.getNounces().get(m.getPublicKey()); //FIXME
+							Long n_compare = server.getNounces().get(m.getPublicKey());
 							if((long)n_compare != ((long)m.getNonce())){ System.out.println("Different Nonce, reject"); continue; }
 							System.out.println("DUP Signature verified successfully!");
 							server.put(m.getPublicKey(), m.getDomain(), m.getUsername(), m.getPassword());	
@@ -91,14 +95,15 @@ public class ServerThread extends Thread {
 						ver_u = crypto.signature_verify(m.getSig_username(), m.getPublicKey(), m.getUsername());
 						ver_n = crypto.signature_verify(m.getSig_nonce(), m.getPublicKey(), m.getNonce().toString().getBytes());
 						if(ver_d && ver_u && ver_n) {
-							Long n_compare = server.getNounces().get(m.getPublicKey()); //FIXME
+							Long n_compare = server.getNounces().get(m.getPublicKey()); 
+							System.out.println(n_compare + " " + m.getNonce());
 							if((long)n_compare != (long)m.getNonce()){ System.out.println("Repeated Nonce, possible replay attack"); continue; }
 							System.out.println("Signature verified successfully!");
 							Long nonce = server.getNounce();
 							server.getNounces().put(m.getPublicKey(), nonce);
 							System.out.println("GENERATED NONCE: " + nonce);
 							byte[] pass = server.get(m.getPublicKey(), m.getDomain(), m.getUsername());
-							Message m2 = new Message(null, pubKey, null, null, crypto.signature_generate(pass, privKey), null, null, pass, nonce, crypto.signature_generate(nonce.toString().getBytes(), privKey)); //FIXME createMessage
+							Message m2 = new Message(null, pubKey, null, null, crypto.signature_generate(pass, privKey), null, null, pass, nonce, crypto.signature_generate(nonce.toString().getBytes(), privKey)); 
 							objOut.writeObject(m2);
 						}
 						else {
@@ -137,10 +142,10 @@ public class ServerThread extends Thread {
 						}
 					}else if(m.getFunc().equals("nounce")){
 						Long nounce= server.getNounce();
+						server.getNounces().put(m.getPubKey(), nounce);
 						System.out.println("GENERATED NONCE: " + nounce);
 						if(nounce != 0){							
 							System.out.println("nouce that is going to be send: "+nounce.toString());
-							//FIXME encriptar o nounce com a privada e so depois fazer sign como na pass?
 							byte[] sign_nounce = crypto.signature_generate(nounce.toString().getBytes("UTF-8"), privKey);
 							resMsg = new SignedMessage("nounce",pubKey,sign_pub, "success", nounce, sign_nounce);
 							objOut.writeObject(resMsg);
@@ -163,7 +168,7 @@ public class ServerThread extends Thread {
 				connectionOpen = false;
 			} catch (EOFException e) {
 				//e.printStackTrace();
-				System.out.println("Exiting"); //FIXME
+				System.out.println("Exiting");
 				connectionOpen = false;
 				//System.exit(0);
 			} catch (IOException e) {
