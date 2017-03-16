@@ -83,7 +83,7 @@ public class Client {
 			//INIT
 			case 1:
 				if(initiated){
-					System.err.println("you have already executed init");
+					System.err.println("You have already executed init");
 					continue;
 				}
 				System.out.println("Login to your KeyStore:\n\"Username Password\"");
@@ -91,13 +91,13 @@ public class Client {
 				input = s.nextLine();
 				spl = input.split(" ");
 				if(spl.length != 2){
-					System.err.println("2 parameters expected");
+					System.err.println("2 parameters expected!");
 					continue;
 				}
 				
 				KeyStore ks = c.getKeyStore(spl[1]);
 				if(ks==null){
-					System.err.println("login invalid, try again");
+					System.err.println("Login invalid, try again!");
 					continue;
 				}
 				if(l.init(ks, spl[0], spl[1]))
@@ -106,7 +106,7 @@ public class Client {
 			//REGISTER
 			case 2:
 				if(!initiated){
-					System.err.println("you need to call init in order to contact server");
+					System.err.println("You need to call init in order to contact server");
 					continue;
 				}
 				l.register_user();
@@ -114,7 +114,7 @@ public class Client {
 			//SAVE PASSWORD
 			case 3:
 				if(!initiated){
-					System.err.println("you need to call init in order to contact server");
+					System.err.println("You need to call init in order to contact server");
 					continue;
 				}
 				System.out.println("Insert:\n\"Domain Username Password\"");
@@ -123,7 +123,7 @@ public class Client {
 				spl = input.split(" ");
 				try {
 					if(spl.length != 3){
-						System.err.println("3 parameters expected");
+						System.err.println("3 parameters expected!");
 						continue;
 					}
 					l.save_password(spl[0].trim().getBytes(), spl[1].trim().getBytes(), spl[2].trim().getBytes());
@@ -138,7 +138,7 @@ public class Client {
 			//RETRIEVE PASSWORD
 			case 4:
 				if(!initiated){
-					System.err.println("you need to call init in order to contact server");
+					System.err.println("You need to call init in order to contact server");
 					continue;
 				}
 				System.out.println("Insert:\n\"Domain Username\"");
@@ -146,7 +146,7 @@ public class Client {
 				input = s.nextLine();
 				spl = input.split(" ");
 				if(spl.length != 2){
-					System.err.println("2 parameters expected");
+					System.err.println("2 parameters expected!");
 					continue;
 				}
 				String pass = l.retrieve_password(spl[0].getBytes(), spl[1].getBytes());
@@ -171,7 +171,7 @@ public class Client {
 				System.out.println("Closed with success");
 				break;
 			default:
-				System.out.println("Invalid argument. Try again");
+				System.out.println("Invalid argument. Try again!");
 			}
 		}
 		s.close();

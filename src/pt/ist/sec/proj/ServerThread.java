@@ -17,6 +17,8 @@ public class ServerThread extends Thread {
 	static PublicKey pubKey;
 	static PrivateKey privKey;
 	byte[] sign_pub;
+	
+	boolean verbose = false;
 
 	public ServerThread(Socket clientSocket, Server server) {
 		this.socket = clientSocket;
@@ -60,23 +62,29 @@ public class ServerThread extends Thread {
 						ver_p = crypto.signature_verify(m.getSig_password(), m.getPublicKey(), m.getPassword());
 						ver_n = crypto.signature_verify(m.getSig_nonce(), m.getPublicKey(), m.getNonce().toString().getBytes());
 						if(ver_d && ver_u && ver_p && ver_n){
-							System.out.println("EXPECTED NONCE: " + server.getNounces().get(m.getPublicKey()));
-							System.out.println("NONCE: " + m.getNonce());
+							if(verbose) {
+							System.out.println("Expected nonce: " + server.getNounces().get(m.getPublicKey()));
+							System.out.println("Nonce received by server: " + m.getNonce());
+							}
 							Long n_compare = server.getNounces().get(m.getPublicKey());
 							if((long)n_compare != ((long)m.getNonce())){ System.out.println("Different Nonce, reject"); continue; }
 							System.out.println("DUP Signature verified successfully!");
 							server.put(m.getPublicKey(), m.getDomain(), m.getUsername(), m.getPassword());	
 							
 							Long nounce = server.getNounce();
-							System.out.println("GENERATED NONCE: " + nounce);
+							if(verbose) {
+							System.out.println("Generated nonce: " + nounce);
+							}
 							server.getNounces().put(m.getPublicKey(), nounce);
-							if(nounce != 0){							
-								System.out.println("nouce that is going to be send: "+ nounce.toString());
+							if(nounce != 0){
+								if(verbose) {
+								System.out.println("Nonce that is going to be send: "+ nounce.toString());
+								}
 								byte[] sign_nounce = crypto.signature_generate(nounce.toString().getBytes("UTF-8"), privKey);								
 								resMsg = new SignedMessage("register", pubKey, sign_pub, "success", nounce, sign_nounce);
 								objOut.writeObject(resMsg);
 							}else{
-								System.out.println("error generating nounce (serverThread)");
+								System.out.println("Error generating nonce (serverThread)");
 								resMsg = new SignedMessage("register", pubKey, sign_pub, "fail", null, null);
 								objOut.writeObject(resMsg);
 							}
@@ -91,13 +99,17 @@ public class ServerThread extends Thread {
 						ver_u = crypto.signature_verify(m.getSig_username(), m.getPublicKey(), m.getUsername());
 						ver_n = crypto.signature_verify(m.getSig_nonce(), m.getPublicKey(), m.getNonce().toString().getBytes());
 						if(ver_d && ver_u && ver_n) {
-							Long n_compare = server.getNounces().get(m.getPublicKey()); 
+							Long n_compare = server.getNounces().get(m.getPublicKey());
+							if(verbose) {
 							System.out.println(n_compare + " " + m.getNonce());
+							}
 							if((long)n_compare != (long)m.getNonce()){ System.out.println("Repeated Nonce, possible replay attack"); continue; }
 							System.out.println("Signature verified successfully!");
 							Long nonce = server.getNounce();
 							server.getNounces().put(m.getPublicKey(), nonce);
-							System.out.println("GENERATED NONCE: " + nonce);
+							if(verbose) {
+							System.out.println("Generated nonce: " + nonce);
+							}
 							byte[] pass = server.get(m.getPublicKey(), m.getDomain(), m.getUsername());
 							Message m2 = new Message(null, pubKey, null, null, crypto.signature_generate(pass, privKey), null, null, pass, nonce, crypto.signature_generate(nonce.toString().getBytes(), privKey)); 
 							objOut.writeObject(m2);
@@ -124,14 +136,16 @@ public class ServerThread extends Thread {
 						Long nounce = sm.getNounce();
 						if(result.equals("success")){
 							System.out.println("Signature verified successfully!");
-							//Long nonce = server.getNounce(); 
-							System.out.println("GENERATED NONCE: " + nounce);
+							if(verbose) {
+							System.out.println("Generated nonce: " + nounce);
+							}
 							byte[] sig_nonce = crypto.signature_generate(nounce.toString().getBytes(), server.privKey);
 							resMsg = new SignedMessage("register", pubKey, sign_pub, "success", nounce, sig_nonce);
 							objOut.writeObject(resMsg);
 						}else if (result.equals("used key")){
-							//Long nonce = server.getNounce(); 
-							System.out.println("GENERATED NONCE: " + nounce);
+							if(verbose) {
+							System.out.println("Generated nonce: " + nounce);
+							}
 							byte[] sig_nonce = crypto.signature_generate(nounce.toString().getBytes(), server.privKey);
 							resMsg = new SignedMessage("register",pubKey,sign_pub ,"used key", nounce, sig_nonce);
 							objOut.writeObject(resMsg);
@@ -139,9 +153,13 @@ public class ServerThread extends Thread {
 					}else if(m.getFunc().equals("nounce")){
 						Long nounce= server.getNounce();
 						server.getNounces().put(m.getPubKey(), nounce);
-						System.out.println("GENERATED NONCE: " + nounce);
-						if(nounce != 0){							
-							System.out.println("nouce that is going to be send: "+nounce.toString());
+						if(verbose) {
+						System.out.println("Genereated nonce: " + nounce);
+						}
+						if(nounce != 0){
+							if(verbose) {
+							System.out.println("Nonce that is going to be send: "+nounce.toString());
+							}
 							byte[] sign_nounce = crypto.signature_generate(nounce.toString().getBytes("UTF-8"), privKey);
 							resMsg = new SignedMessage("nounce",pubKey,sign_pub, "success", nounce, sign_nounce);
 							objOut.writeObject(resMsg);

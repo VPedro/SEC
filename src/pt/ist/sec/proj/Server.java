@@ -27,6 +27,7 @@ public class Server {
 	private Map<PublicKey, Long> nounces;
 	private List<PublicKey> registeredKeys;
 	private List<Long> usedNounces;
+	boolean verbose = false;
 
 	public Map<PublicKey, Long> getNounces(){
 		return nounces;
@@ -44,7 +45,6 @@ public class Server {
 		System.arraycopy(pubKey.getEncoded(), 0, c, 0, pubKey.getEncoded().length);
 		System.arraycopy(domain, 0, c, pubKey.getEncoded().length, domain.length);
 		System.arraycopy(username, 0, c, pubKey.getEncoded().length + domain.length, username.length);
-		System.out.println(new String(c));
 		newPass.put(new String(c), password);
 	}
 
@@ -54,7 +54,6 @@ public class Server {
 		System.arraycopy(domain, 0, c, pubKey.getEncoded().length, domain.length);
 		System.arraycopy(username, 0, c, pubKey.getEncoded().length + domain.length, username.length);
 		byte[] password_retrieved = newPass.get(new String(c));
-		System.out.println(new String(c));
 		
 		if(password_retrieved != null){
 			return password_retrieved;
@@ -72,7 +71,7 @@ public class Server {
 			System.out.println("Loaded keys from keystore with success");
 		} catch (Exception e){
 			e.printStackTrace();
-			System.out.println("impossible to load keys from keystore to library");
+			System.out.println("Impossible to load keys from keystore to library!");
 		}
 
 	}
@@ -121,7 +120,7 @@ public class Server {
 			nounces.put(msg.getPubKey(), nonce);
 			msg.setNounce(nonce);
 			msg.setRes("used key");
-			System.out.println("already registered, aborted");
+			System.out.println("Already registered, aborted!");
 			return msg;
 		}
 		else{

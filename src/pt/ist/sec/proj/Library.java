@@ -23,9 +23,10 @@ public class Library {
 
 	static PublicKey pubKey;
 	static PrivateKey privKey;
-	
+
 	private Long nextNounce;
-	
+	boolean verbose = false;
+
 	Crypto crypto;
 
 	public boolean init(KeyStore keystore, String alias, String password){
@@ -39,20 +40,22 @@ public class Library {
 			inObject = new ObjectInputStream(client.getInputStream());
 			outData = new DataOutputStream(client.getOutputStream());
 			inData = new DataInputStream(client.getInputStream());
-			
+
 			if(!setKeys(keystore, alias, password))
 				return false;
-			
+
 			nextNounce = getNonce();
-			System.out.println("NOOOOOOOOOOOOOONCE: " + nextNounce);
-			
+			if(verbose) {
+				System.out.println("Nonce: " + nextNounce);
+			}
+
 			return true;
 
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
 			return false;
 		} catch (ConnectException e1) {
-			System.out.println("error initiating library, no server availible");
+			System.out.println("Error initiating library, no server available");
 			return false;
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -60,10 +63,10 @@ public class Library {
 		}
 	}
 
-	
+
 	private long getNonce() {		
 		byte[] sig_pub = crypto.signature_generate(pubKey.getEncoded(), privKey);
-		
+
 		SignedMessage msg = new SignedMessage("nounce", pubKey, sig_pub,  null, null, null);
 		SignedMessage resMsg = null;
 		try {
@@ -72,7 +75,7 @@ public class Library {
 
 			boolean valid = crypto.signature_verify(resMsg.getSignNounce(), resMsg.getPubKey(),  resMsg.getNounce().toString().getBytes("UTF-8"));
 			if(valid ){
-				
+
 				if(resMsg.getRes().equals("fail")){
 					System.out.println("Could not save the password");
 				}else{
@@ -80,9 +83,11 @@ public class Library {
 					if(validNounce){
 						//save received nounce
 						Long l = resMsg.getNounce();
-						System.out.println("nounce reveived: " + l);
+						if(verbose) {
+							System.out.println("Nonce received: " + l);
+						}
 						return l;
-						
+
 					}
 				}
 			}		
@@ -93,7 +98,7 @@ public class Library {
 			e.printStackTrace();
 			return 0;
 		}
-		
+
 		return 0;
 	}
 
@@ -106,16 +111,16 @@ public class Library {
 			return true;
 		} catch (Exception e){
 			e.printStackTrace();
-			System.out.println("impossible to load keys from keystore to library");
+			System.out.println("Impossible to load keys from keystore to library");
 			return false;
 		}
-		
+
 	}
 
 
 	public void register_user(){
 		byte[] sig_pub = crypto.signature_generate(pubKey.getEncoded(), privKey);
-		
+
 		SignedMessage msg = new SignedMessage("register", pubKey, sig_pub, null, null, null);
 		SignedMessage resMsg = null;
 		try {
@@ -125,7 +130,9 @@ public class Library {
 				boolean b = crypto.signature_verify(resMsg.getSignNounce(), resMsg.getPubKey(), resMsg.getNounce().toString().getBytes());
 				if (b){
 					nextNounce = resMsg.getNounce();
-					System.out.println("NEXT NONCE: " + nextNounce);
+					if(verbose) {
+						System.out.println("Next nonce: " + nextNounce);
+					}
 				}
 				//long n = 0;
 				//nextNounce = n;
@@ -135,9 +142,11 @@ public class Library {
 				boolean b = crypto.signature_verify(resMsg.getSignNounce(), resMsg.getPubKey(), resMsg.getNounce().toString().getBytes());
 				if (b){
 					nextNounce = resMsg.getNounce();
-					System.out.println("NEXT NONCE: " + nextNounce);
+					if(verbose) {
+						System.out.println("Next nonce: " + nextNounce);
+					}
 				}
-				System.out.println("You are already registerd");
+				System.out.println("You are already registered");
 				//return false;
 			}
 		} catch (IOException e) {
@@ -147,7 +156,7 @@ public class Library {
 		}
 		//return false;	
 	}
-	
+
 	public Message createMessage(String s, byte[] domain, byte[] username, byte[] password, Long nonce) {
 		byte[] sig_d = crypto.signature_generate(domain, privKey);
 		byte[] sig_u = crypto.signature_generate(username, privKey);
@@ -178,28 +187,32 @@ public class Library {
 					if(validNounce){
 						//save new nounce
 						Long l = resMsg.getNounce();
-						System.out.println("nounce received: " + l);
+						if(verbose) {
+							System.out.println("Nonce received: " + l);
+						}
 						nextNounce = l;
-						System.out.println("NEXT NONCE: " + nextNounce);
+						if(verbose) {
+							System.out.println("Next nonce: " + nextNounce);
+						}
 					}
 					else {
-						System.out.println("Nonce not valid");
+						System.out.println("Nonce not valid!");
 					}
 				}
 				else{
-					System.out.println("Error saving your password");
+					System.out.println("Error saving your password!");
 				}
 			}			
 		} catch (IOException | ClassNotFoundException e) {
 			e.printStackTrace();
-			System.out.println("could not save password");
+			System.out.println("Could not save password!");
 		}
 	}
 
 	public String retrieve_password(byte[] domain, byte[] username){
 		byte[] hash_dom = crypto.hash_sha256(domain);
 		byte[] hash_user = crypto.hash_sha256(username);
-		
+
 		Message msg = createMessage("retrieve_password", hash_dom, hash_user, null, nextNounce);
 		Object o = null;
 		try {
@@ -212,7 +225,7 @@ public class Library {
 		}
 		if(o instanceof SignedMessage){
 			if(((SignedMessage) o).getRes().equals("register_fail")){
-				System.out.println("You are not registered");
+				System.out.println("You are not registered!");
 				return "fail";
 			}
 		}
@@ -223,10 +236,14 @@ public class Library {
 		}
 		ver_n = crypto.signature_verify(m.getSig_nonce(), m.getPublicKey(), m.getNonce().toString().getBytes());
 		nextNounce = m.getNonce();
-		System.out.println("NEXT NONCE: " + nextNounce);
+		if(verbose) {
+			System.out.println("Next nonce: " + nextNounce);
+		}
 		if(ver_p && ver_n){ 	
 			nextNounce = m.getNonce();
-			System.out.println("NEXT NONCE: " + nextNounce);
+			if(verbose) {
+				System.out.println("Next nonce: " + nextNounce);
+			}
 			byte[] b = crypto.decrypt(m.getPassword(), privKey);
 			if (b == null){return null;}
 			try {
@@ -246,7 +263,9 @@ public class Library {
 		try {
 			outObject.writeObject(msg);
 			resMsg = (SignedMessage)inObject.readObject();
-			System.out.println("result from server: " + resMsg.getRes());
+			if(verbose) {
+				System.out.println("Result from server: " + resMsg.getRes());
+			}
 		} catch (IOException e) {
 			e.printStackTrace();
 		} catch (ClassNotFoundException e) {
