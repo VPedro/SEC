@@ -204,9 +204,13 @@ public class Library {
 		}
 		
 		//TODO verify signature and decript if valid
-		boolean ver_p, ver_n;
-		ver_p = crypto.signature_verify(m.getSig_password(), m.getPublicKey(), m.getPassword());
+		boolean ver_p = false, ver_n;
+		if(m.getPassword() != null) {
+			ver_p = crypto.signature_verify(m.getSig_password(), m.getPublicKey(), m.getPassword());
+		}
 		ver_n = crypto.signature_verify(m.getSig_nonce(), m.getPublicKey(), m.getNonce().toString().getBytes());
+		nextNounce = m.getNonce();
+		System.out.println("NEXT NONCE: " + nextNounce);
 		if(ver_p && ver_n){ 	
 			nextNounce = m.getNonce();
 			System.out.println("NEXT NONCE: " + nextNounce);

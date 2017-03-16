@@ -57,6 +57,7 @@ public class Client {
 		Scanner s = new Scanner(System.in);
 		int option = 0;
 		boolean initiated = false;
+		boolean registered = false;
 		String input;
 		String[] spl;
 		System.out.println(" ");
@@ -110,11 +111,16 @@ public class Client {
 					System.out.println("You were already registered in the server");
 				}*/
 				l.register_user();
+				registered = true;
 				break;
 			//SAVE PASSWORD
 			case 3:
 				if(!initiated){
 					System.err.println("you need to call init in order to contact server");
+					continue;
+				}
+				if(!registered){
+					System.err.println("you need to call register before doing that option");
 					continue;
 				}
 				System.out.println("Insert:\n\"Domain Username Password\"");
@@ -141,6 +147,10 @@ public class Client {
 					System.err.println("you need to call init in order to contact server");
 					continue;
 				}
+				if(!registered){
+					System.err.println("you need to call register before doing that option");
+					continue;
+				}
 				System.out.println("Insert:\n\"Domain Username\"");
 				s.nextLine();
 				input = s.nextLine();
@@ -159,9 +169,13 @@ public class Client {
 				break;
 			//CLOSE
 			case 5:
+				if(!initiated){
+					System.err.println("Exiting");
+					System.exit(0);
+				}
 				var = false;
 				l.close();
-				System.out.println("closed with success");
+				System.out.println("Closed with success");
 				break;
 			default:
 				System.out.println("Invalid argument. Try again");
