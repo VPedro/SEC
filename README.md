@@ -1,6 +1,18 @@
 # SEC
-SEC Project
 
+Our project already includes 2 keystores. But if needed run 1st step (Generate keystore) to generate new ones.
+
+
+File 'keystorefile.jce' already includes the following pairs of (alias, password):
+ - (alias, olaola)
+ - (alias1, olaola)
+ - (alias2, olaola)
+
+
+File 'serverkeystorefile.jce' with:
+ - (server, olaola)
+ 
+ 
 # 1. Generate keystores 
 `cd SEC/src` <br><br>
 In order to simulate that the Keys are generated in a secure way, run keytool on src folder with the following commands:
