@@ -39,7 +39,9 @@ public class Library {
 			inObject = new ObjectInputStream(client.getInputStream());
 			outData = new DataOutputStream(client.getOutputStream());
 			inData = new DataInputStream(client.getInputStream());
-			setKeys(keystore, alias, password);
+			
+			if(!setKeys(keystore, alias, password))
+				return false;
 			
 			nextNounce = getNonce();
 			System.out.println("NOOOOOOOOOOOOOONCE: " + nextNounce);
@@ -96,15 +98,16 @@ public class Library {
 	}
 
 
-	private void setKeys(KeyStore ks, String alias, String password) {
+	private boolean setKeys(KeyStore ks, String alias, String password) {
 		try {
 			//Get the keys for the given alias and password.			
-			pubKey = ks.getCertificate(alias).getPublicKey();
 			privKey = (PrivateKey) ks.getKey(alias, password.toCharArray());
-			
+			pubKey = ks.getCertificate(alias).getPublicKey();
+			return true;
 		} catch (Exception e){
 			e.printStackTrace();
 			System.out.println("impossible to load keys from keystore to library");
+			return false;
 		}
 		
 	}
@@ -155,7 +158,10 @@ public class Library {
 	}
 
 	public void save_password(byte[] domain, byte[] username, byte[] password) throws IOException {
-		Message msg = createMessage("save_password", domain, username, password, nextNounce);
+		byte[] hash_dom = crypto.hash_sha256(domain);
+		byte[] hash_user = crypto.hash_sha256(username);
+
+		Message msg = createMessage("save_password", hash_dom, hash_user, password, nextNounce);
 		SignedMessage resMsg = null;
 		try {
 			outObject.writeObject(msg);
@@ -183,18 +189,18 @@ public class Library {
 				else{
 					System.out.println("Error saving your password");
 				}
-			}
-			
-			//depending on getRes print
-			
+			}			
 		} catch (IOException | ClassNotFoundException e) {
 			e.printStackTrace();
 			System.out.println("could not save password");
 		}
 	}
-	
+
 	public String retrieve_password(byte[] domain, byte[] username){
-		Message msg = createMessage("retrieve_password", domain, username, null, nextNounce);
+		byte[] hash_dom = crypto.hash_sha256(domain);
+		byte[] hash_user = crypto.hash_sha256(username);
+		
+		Message msg = createMessage("retrieve_password", hash_dom, hash_user, null, nextNounce);
 		Object o = null;
 		try {
 			outObject.writeObject(msg);
@@ -231,6 +237,7 @@ public class Library {
 		}
 		return null;
 	}
+
 
 	public void close(){
 		byte[] sig_pub = crypto.signature_generate(pubKey.getEncoded(), privKey);

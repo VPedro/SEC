@@ -60,10 +60,6 @@ public class ServerThread extends Thread {
 						ver_p = crypto.signature_verify(m.getSig_password(), m.getPublicKey(), m.getPassword());
 						ver_n = crypto.signature_verify(m.getSig_nonce(), m.getPublicKey(), m.getNonce().toString().getBytes());
 						if(ver_d && ver_u && ver_p && ver_n){
-							/*for(Long l : server.getUsedNounces()){
-								System.out.println(l);
-							}
-							System.out.println("CONTAINS THIS NONCE: " + m.getNonce() + " ???? => " + server.getUsedNounces().contains(m.getNonce()));*/
 							System.out.println("EXPECTED NONCE: " + server.getNounces().get(m.getPublicKey()));
 							System.out.println("NONCE: " + m.getNonce());
 							Long n_compare = server.getNounces().get(m.getPublicKey());

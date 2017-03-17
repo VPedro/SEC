@@ -22,11 +22,11 @@ import java.util.Map;
 public class Server {
 
 	private ServerSocket serverSocket;
-	private Map<ArrayList<String>, String> passwords;
+	//private Map<ArrayList<String>, String> passwords;
+	private Map<String, byte[]> newPass;
 	private Map<PublicKey, Long> nounces;
 	private List<PublicKey> registeredKeys;
 	private List<Long> usedNounces;
-	private Crypto crypto;
 
 	public Map<PublicKey, Long> getNounces(){
 		return nounces;
@@ -40,21 +40,24 @@ public class Server {
 	PrivateKey privKey;
 
 	public void putMap(PublicKey pubKey, byte[] domain, byte[] username, byte[] password){
-		ArrayList<String> list = new ArrayList<String>();
-		list.add(crypto.encode_base64(pubKey.getEncoded()));
-		list.add(crypto.encode_base64(domain));
-		list.add(crypto.encode_base64(username));
-		passwords.put(list, crypto.encode_base64(password));
+		byte[] c = new byte[pubKey.getEncoded().length + domain.length + username.length];
+		System.arraycopy(pubKey.getEncoded(), 0, c, 0, pubKey.getEncoded().length);
+		System.arraycopy(domain, 0, c, pubKey.getEncoded().length, domain.length);
+		System.arraycopy(username, 0, c, pubKey.getEncoded().length + domain.length, username.length);
+		System.out.println(new String(c));
+		newPass.put(new String(c), password);
 	}
 
 	public byte[] getMapValue(PublicKey pubKey, byte[] domain, byte[] username) throws UnsupportedEncodingException{
-		ArrayList<String> list = new ArrayList<String>();
-		list.add(crypto.encode_base64(pubKey.getEncoded()));
-		list.add(crypto.encode_base64(domain));
-		list.add(crypto.encode_base64(username));
-		String password_retrieved = passwords.get(list);
+		byte[] c = new byte[pubKey.getEncoded().length + domain.length + username.length];
+		System.arraycopy(pubKey.getEncoded(), 0, c, 0, pubKey.getEncoded().length);
+		System.arraycopy(domain, 0, c, pubKey.getEncoded().length, domain.length);
+		System.arraycopy(username, 0, c, pubKey.getEncoded().length + domain.length, username.length);
+		byte[] password_retrieved = newPass.get(new String(c));
+		System.out.println(new String(c));
+		
 		if(password_retrieved != null){
-			return crypto.decode_base64(password_retrieved);
+			return password_retrieved;
 		}
 		else {
 			return null;
@@ -174,8 +177,7 @@ public class Server {
 	public static void main(String args[]){
 
 		Server server = new Server();
-		server.crypto = new Crypto();
-		server.passwords = new HashMap<ArrayList<String>, String>();
+		server.newPass = new HashMap<String, byte[]>();
 		server.nounces = new HashMap<PublicKey, Long>();
 		server.usedNounces = new ArrayList<Long>();
 		server.registeredKeys = new ArrayList<PublicKey>();

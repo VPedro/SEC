@@ -9,7 +9,11 @@ import java.security.cert.CertificateException;
 import java.util.Scanner;
 
 public class Client {
-
+	
+	Library testLibrary;
+	KeyStore ks = null;
+	boolean initiated = false;
+	
 	public void menu(){
 		System.out.println(" ");
 		System.out.println("\t1 - Init");
@@ -22,7 +26,7 @@ public class Client {
 	}
 
 	public KeyStore getKeyStore(String pass){ //created with "olaola" as password
-		KeyStore ks = null;
+		//KeyStore ks = null;
 		try { //If KeyStore file already exists
 			FileInputStream fis = new FileInputStream("keystorefile.jce");	//Open the KeyStore file
 			ks = KeyStore.getInstance("JCEKS"); //Create an instance of KeyStore of type “JCEKS”
@@ -50,14 +54,16 @@ public class Client {
 		}
 		return ks;
 	}
+	
 
 	public static void main(String args[]){
+		
 		Client c = new Client();
-		Library l = new Library();
+		Library l = new Library();		
+		
 		Scanner s = new Scanner(System.in);
 		int option = 0;
 		boolean initiated = false;
-		boolean registered = false;
 		String input;
 		String[] spl;
 		System.out.println(" ");
@@ -88,9 +94,7 @@ public class Client {
 					System.err.println("2 parameters expected");
 					continue;
 				}
-				//fix bug, 1 olaola exists, so... 2 olaola devia dar erro e nao dar loadKeys
 				
-				//if only one alias per file, change username to alias
 				KeyStore ks = c.getKeyStore(spl[1]);
 				if(ks==null){
 					System.err.println("login invalid, try again");
@@ -105,13 +109,7 @@ public class Client {
 					System.err.println("you need to call init in order to contact server");
 					continue;
 				}
-				/*if(l.register_user()){
-					System.out.println("Registered with success");
-				}else {
-					System.out.println("You were already registered in the server");
-				}*/
 				l.register_user();
-				registered = true;
 				break;
 			//SAVE PASSWORD
 			case 3:
@@ -128,7 +126,7 @@ public class Client {
 						System.err.println("3 parameters expected");
 						continue;
 					}
-					l.save_password(spl[0].getBytes("UTF-8"), spl[1].getBytes("UTF-8"), spl[2].getBytes("UTF-8"));
+					l.save_password(spl[0].trim().getBytes(), spl[1].trim().getBytes(), spl[2].trim().getBytes());
 				} catch(SocketException e){
 					System.out.println("Server not available. Exiting..");
 					var = false;
@@ -177,5 +175,27 @@ public class Client {
 			}
 		}
 		s.close();
+	}
+	
+	public String runFunction(String fun, String var1, String var2){
+		switch (fun){
+		case "init":
+			KeyStore ks = getKeyStore(var1);
+			if(ks==null){
+				return "login invalid";
+			}
+			if(testLibrary.init(ks,var1, var2)){
+				initiated =true;
+				return "success";
+			}else{
+				return "fail";
+			}
+		default :
+			return "invalid function";
+		}
+	}
+	
+	public void createTestLibrary(){
+		testLibrary = new Library();
 	}
 }
