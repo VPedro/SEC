@@ -29,3 +29,7 @@ In order to simulate that the Keys are generated in a secure way, run keytool on
 `cd SEC/src` <br>
 `javac pt/ist/sec/proj/*.java` <br>
 `java pt.ist.sec.proj.Client` <br>
+
+
+# TODO
+`When the same client is logged in two processes and one of them closes, the other frozens`<br>
