@@ -44,11 +44,6 @@ public class Library {
 			if(!setKeys(keystore, alias, password))
 				return false;
 
-			nextNounce = getNonce();
-			if(verbose) {
-				System.out.println("Nonce: " + nextNounce);
-			}
-
 			return true;
 
 		} catch (UnknownHostException e) {
@@ -75,30 +70,23 @@ public class Library {
 
 			boolean valid = crypto.signature_verify(resMsg.getSignNounce(), resMsg.getPubKey(),  resMsg.getNounce().toString().getBytes("UTF-8"));
 			if(valid ){
-
 				if(resMsg.getRes().equals("fail")){
 					System.out.println("Could not save the password");
 				}else{
 					boolean validNounce = crypto.signature_verify(resMsg.getSignNounce(), resMsg.getPubKey(),  resMsg.getNounce().toString().getBytes("UTF-8"));
 					if(validNounce){
-						//save received nounce
 						Long l = resMsg.getNounce();
 						if(verbose) {
 							System.out.println("Nonce received: " + l);
 						}
 						return l;
-
 					}
 				}
 			}		
-		} catch (IOException e) {
-			e.printStackTrace();
-			return 0;
-		} catch (ClassNotFoundException e) {
+		} catch (IOException | ClassNotFoundException e) {
 			e.printStackTrace();
 			return 0;
 		}
-
 		return 0;
 	}
 
@@ -167,6 +155,8 @@ public class Library {
 	}
 
 	public void save_password(byte[] domain, byte[] username, byte[] password) throws IOException {
+		nextNounce = getNonce();
+		
 		byte[] hash_dom = crypto.hash_sha256(domain);
 		byte[] hash_user = crypto.hash_sha256(username);
 
@@ -210,6 +200,8 @@ public class Library {
 	}
 
 	public String retrieve_password(byte[] domain, byte[] username){
+		nextNounce = getNonce();
+		
 		byte[] hash_dom = crypto.hash_sha256(domain);
 		byte[] hash_user = crypto.hash_sha256(username);
 
@@ -257,6 +249,9 @@ public class Library {
 
 
 	public void close(){
+		nextNounce = getNonce();
+		//FIXME falta enviar o nouce e verificar do lado do server
+		
 		byte[] sig_pub = crypto.signature_generate(pubKey.getEncoded(), privKey);
 		SignedMessage msg = new SignedMessage("close",pubKey, sig_pub,null, null, null);
 		SignedMessage resMsg = null;
