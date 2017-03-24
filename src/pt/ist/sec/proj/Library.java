@@ -24,13 +24,13 @@ public class Library {
 	static PublicKey pubKey;
 	static PrivateKey privKey;
 
-	private Long nextNounce;
+	private Long nextNonce;
 	boolean verbose = false;
 
 	Crypto crypto;
 
 	public boolean init(KeyStore keystore, String alias, String password){
-		//start socket
+
 		String serverName = "";
 		int serverPort = 1025;
 		crypto = new Crypto();
@@ -45,7 +45,6 @@ public class Library {
 				return false;
 
 			return true;
-
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
 			return false;
@@ -62,20 +61,20 @@ public class Library {
 	private long getNonce() {		
 		byte[] sig_pub = crypto.signature_generate(pubKey.getEncoded(), privKey);
 
-		SignedMessage msg = new SignedMessage("nounce", pubKey, sig_pub,  null, null, null);
+		SignedMessage msg = new SignedMessage("nonce", pubKey, sig_pub,  null, null, null);
 		SignedMessage resMsg = null;
 		try {
 			outObject.writeObject(msg);
 			resMsg = (SignedMessage)inObject.readObject();
 
-			boolean valid = crypto.signature_verify(resMsg.getSignNounce(), resMsg.getPubKey(),  resMsg.getNounce().toString().getBytes("UTF-8"));
+			boolean valid = crypto.signature_verify(resMsg.getSignNonce(), resMsg.getPubKey(),  resMsg.getNonce().toString().getBytes("UTF-8"));
 			if(valid ){
 				if(resMsg.getRes().equals("fail")){
 					System.out.println("Could not save the password");
 				}else{
-					boolean validNounce = crypto.signature_verify(resMsg.getSignNounce(), resMsg.getPubKey(),  resMsg.getNounce().toString().getBytes("UTF-8"));
+					boolean validNounce = crypto.signature_verify(resMsg.getSignNonce(), resMsg.getPubKey(),  resMsg.getNonce().toString().getBytes("UTF-8"));
 					if(validNounce){
-						Long l = resMsg.getNounce();
+						Long l = resMsg.getNonce();
 						if(verbose) {
 							System.out.println("Nonce received: " + l);
 						}
@@ -115,34 +114,13 @@ public class Library {
 			outObject.writeObject(msg);
 			resMsg = (SignedMessage)inObject.readObject();
 			if(resMsg.getRes().equals("success")){
-				boolean b = crypto.signature_verify(resMsg.getSignNounce(), resMsg.getPubKey(), resMsg.getNounce().toString().getBytes());
-				if (b){
-					nextNounce = resMsg.getNounce();
-					if(verbose) {
-						System.out.println("Next nonce: " + nextNounce);
-					}
-				}
-				//long n = 0;
-				//nextNounce = n;
 				System.out.println("Registered in server with success");
-				//return true;
 			}else if(resMsg.getRes().equals("used key")){
-				boolean b = crypto.signature_verify(resMsg.getSignNounce(), resMsg.getPubKey(), resMsg.getNounce().toString().getBytes());
-				if (b){
-					nextNounce = resMsg.getNounce();
-					if(verbose) {
-						System.out.println("Next nonce: " + nextNounce);
-					}
-				}
 				System.out.println("You are already registered");
-				//return false;
 			}
-		} catch (IOException e) {
-			e.printStackTrace();
-		} catch (ClassNotFoundException e) {
+		} catch (IOException | ClassNotFoundException e) {
 			e.printStackTrace();
 		}
-		//return false;	
 	}
 
 	public Message createMessage(String s, byte[] domain, byte[] username, byte[] password, Long nonce) {
@@ -155,12 +133,10 @@ public class Library {
 	}
 
 	public void save_password(byte[] domain, byte[] username, byte[] password) throws IOException {
-		nextNounce = getNonce();
-		
+		nextNonce = getNonce();
 		byte[] hash_dom = crypto.hash_sha256(domain);
 		byte[] hash_user = crypto.hash_sha256(username);
-
-		Message msg = createMessage("save_password", hash_dom, hash_user, password, nextNounce);
+		Message msg = createMessage("save_password", hash_dom, hash_user, password, nextNonce);
 		SignedMessage resMsg = null;
 		try {
 			outObject.writeObject(msg);
@@ -173,26 +149,13 @@ public class Library {
 			if(valid){
 				if(resMsg.getRes().equals("success")){
 					System.out.println("Password saved with success");
-					boolean validNounce = crypto.signature_verify(resMsg.getSignNounce(), resMsg.getPubKey(),  resMsg.getNounce().toString().getBytes("UTF-8"));
-					if(validNounce){
-						//save new nounce
-						Long l = resMsg.getNounce();
-						if(verbose) {
-							System.out.println("Nonce received: " + l);
-						}
-						nextNounce = l;
-						if(verbose) {
-							System.out.println("Next nonce: " + nextNounce);
-						}
-					}
-					else {
-						System.out.println("Nonce not valid!");
-					}
 				}
 				else{
 					System.out.println("Error saving your password!");
 				}
-			}			
+			}else{
+				System.out.println("server signature not valid");
+			}
 		} catch (IOException | ClassNotFoundException e) {
 			e.printStackTrace();
 			System.out.println("Could not save password!");
@@ -200,71 +163,75 @@ public class Library {
 	}
 
 	public String retrieve_password(byte[] domain, byte[] username){
-		nextNounce = getNonce();
+		nextNonce = getNonce();
 		
 		byte[] hash_dom = crypto.hash_sha256(domain);
 		byte[] hash_user = crypto.hash_sha256(username);
 
-		Message msg = createMessage("retrieve_password", hash_dom, hash_user, null, nextNounce);
+		Message msg = createMessage("retrieve_password", hash_dom, hash_user, null, nextNonce);
 		Object o = null;
 		try {
 			outObject.writeObject(msg);
 			o = (Object)inObject.readObject();
-		} catch (IOException e) {
-			e.printStackTrace();
-		} catch (ClassNotFoundException e) {
+		} catch (IOException | ClassNotFoundException e) {
 			e.printStackTrace();
 		}
 		if(o instanceof SignedMessage){
 			if(((SignedMessage) o).getRes().equals("register_fail")){
 				System.out.println("You are not registered!");
 				return "fail";
+			}else if(((SignedMessage) o).getRes().equals("invalid message")){
+				System.out.println("the message was invalid");
+				return "fail";
 			}
 		}
+		//TODO fazer as verificaçoes como no serverThred? com um func
 		Message m = (Message)o;
-		boolean ver_p = false, ver_n;
+		boolean ver_p = false;
 		if(m.getPassword() != null) {
 			ver_p = crypto.signature_verify(m.getSig_password(), m.getPublicKey(), m.getPassword());
 		}
-		ver_n = crypto.signature_verify(m.getSig_nonce(), m.getPublicKey(), m.getNonce().toString().getBytes());
-		nextNounce = m.getNonce();
-		if(verbose) {
-			System.out.println("Next nonce: " + nextNounce);
-		}
-		if(ver_p && ver_n){ 	
-			nextNounce = m.getNonce();
-			if(verbose) {
-				System.out.println("Next nonce: " + nextNounce);
-			}
+		if(ver_p){ 	
+			
 			byte[] b = crypto.decrypt(m.getPassword(), privKey);
 			if (b == null){return null;}
 			try {
 				return new String(b, "UTF-8");
 			} catch (UnsupportedEncodingException e) {
-				e.printStackTrace();
+				if(verbose) {
+					System.out.println("Result from server: " );
+					e.printStackTrace();
+				}
 			}
+		}else{
+			System.out.println("password signature not valid");
 		}
 		return null;
 	}
 
 
 	public void close(){
-		nextNounce = getNonce();
-		//FIXME falta enviar o nouce e verificar do lado do server
+		nextNonce = getNonce();
+		//FIXME falta enviar o nonce e verificar do lado do server
 		
 		byte[] sig_pub = crypto.signature_generate(pubKey.getEncoded(), privKey);
-		SignedMessage msg = new SignedMessage("close",pubKey, sig_pub,null, null, null);
-		SignedMessage resMsg = null;
+		sendSignedMessage("close", pubKey, sig_pub, null, null);
 		try {
-			outObject.writeObject(msg);
-			resMsg = (SignedMessage)inObject.readObject();
+			SignedMessage resMsg = (SignedMessage)inObject.readObject();
 			if(verbose) {
 				System.out.println("Result from server: " + resMsg.getRes());
 			}
+		} catch (IOException | ClassNotFoundException e) {
+			System.out.println("could not close in server");
+		}
+	}
+	
+	public void sendSignedMessage(String func, PublicKey pubKey, byte[] sign, Long nonce, byte[] signNonce){
+		SignedMessage msg = new SignedMessage(func,pubKey, sign, null, nonce, signNonce);
+		try {
+			outObject.writeObject(msg);
 		} catch (IOException e) {
-			e.printStackTrace();
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
+			System.out.println("Error sending SignedMessage");
 		}
 	}
 

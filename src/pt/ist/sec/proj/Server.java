@@ -3,7 +3,6 @@ package pt.ist.sec.proj;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.security.KeyStore;
@@ -24,44 +23,21 @@ public class Server {
 	private ServerSocket serverSocket;
 	//private Map<ArrayList<String>, String> passwords;
 	private Map<String, byte[]> newPass;
-	private Map<PublicKey, Long> nounces;
+	private Map<PublicKey, Long> nonces;
 	private List<PublicKey> registeredKeys;
-	private List<Long> usedNounces;
+	private List<Long> usedNonces;
 	boolean verbose = false;
 
-	public Map<PublicKey, Long> getNounces(){
-		return nounces;
+	public Map<PublicKey, Long> getNonces(){
+		return nonces;
 	}
 	
-	public List<Long> getUsedNounces(){
-		return usedNounces;
+	public List<Long> getUsedNonces(){
+		return usedNonces;
 	}
 	
 	PublicKey pubKey;
 	PrivateKey privKey;
-
-	public void putMap(PublicKey pubKey, byte[] domain, byte[] username, byte[] password){
-		byte[] c = new byte[pubKey.getEncoded().length + domain.length + username.length];
-		System.arraycopy(pubKey.getEncoded(), 0, c, 0, pubKey.getEncoded().length);
-		System.arraycopy(domain, 0, c, pubKey.getEncoded().length, domain.length);
-		System.arraycopy(username, 0, c, pubKey.getEncoded().length + domain.length, username.length);
-		newPass.put(new String(c), password);
-	}
-
-	public byte[] getMapValue(PublicKey pubKey, byte[] domain, byte[] username) throws UnsupportedEncodingException{
-		byte[] c = new byte[pubKey.getEncoded().length + domain.length + username.length];
-		System.arraycopy(pubKey.getEncoded(), 0, c, 0, pubKey.getEncoded().length);
-		System.arraycopy(domain, 0, c, pubKey.getEncoded().length, domain.length);
-		System.arraycopy(username, 0, c, pubKey.getEncoded().length + domain.length, username.length);
-		byte[] password_retrieved = newPass.get(new String(c));
-		
-		if(password_retrieved != null){
-			return password_retrieved;
-		}
-		else {
-			return null;
-		}
-	}
 
 	private void setKeys(KeyStore ks, String alias, String password) {
 		try {
@@ -79,6 +55,7 @@ public class Server {
 	public KeyStore getKeyStore(String pass){ //created with "olaola" as password
 		KeyStore ks = null;
 		try { //If KeyStore file already exists
+			//FIXME remove hardcoded alias and password
 			FileInputStream fis = new FileInputStream("serverkeystorefile.jce");	//Open the KeyStore file
 			ks = KeyStore.getInstance("JCEKS"); //Create an instance of KeyStore of type “JCEKS”
 			ks.load(fis, pass.toCharArray()); //Load the key entries from the file into the KeyStore object.
@@ -86,18 +63,7 @@ public class Server {
 			System.out.println("KeyStore Loaded");
 		} //create it if cannot find it
 		catch (FileNotFoundException e) {	
-			try { //Could not load KeyStore file, create one
-				ks = KeyStore.getInstance("JCEKS");
-				ks.load(null, pass.toCharArray()); // Create keystore 
-				//Create a new file to store the KeyStore object
-				java.io.FileOutputStream fos = new java.io.FileOutputStream("serverkeystorefile.jce");
-				ks.store(fos, pass.toCharArray());
-				//Write the KeyStore into the file
-				fos.close();
-				System.out.println("KeyStore Created");
-			} catch (NoSuchAlgorithmException | CertificateException | IOException | KeyStoreException e1) {
-				e1.printStackTrace();
-			} 
+			System.out.println("Please create a keystore using keytool first");
 		} catch (NoSuchAlgorithmException | CertificateException | KeyStoreException e) {
 			e.printStackTrace();
 			ks = null;
@@ -114,57 +80,52 @@ public class Server {
 	 **/
 
 	public SignedMessage register(SignedMessage msg){ 
-		//Verifica se é repetido o publicKey
+		//Verify if publicKey is already registered
 		if(registeredKeys.contains(msg.getPubKey())){
-			Long nonce = getNounce();
-			nounces.put(msg.getPubKey(), nonce);
-			msg.setNounce(nonce);
 			msg.setRes("used key");
 			System.out.println("Already registered, aborted!");
 			return msg;
 		}
 		else{
-			Long nonce = getNounce();
-			nounces.put(msg.getPubKey(), nonce);
 			registeredKeys.add(msg.getPubKey());
 			msg.setRes("success");
-			msg.setNounce(nonce);
 			return msg;
 		}
 	}
 
 	public void	put(PublicKey publicKey, byte[] domain, byte[] username, byte[] password){ 
 		System.out.println("Server executed: Save_password");
-		putMap(publicKey, domain, username, password);
-
+		byte[] c = new byte[pubKey.getEncoded().length + domain.length + username.length];
+		System.arraycopy(pubKey.getEncoded(), 0, c, 0, pubKey.getEncoded().length);
+		System.arraycopy(domain, 0, c, pubKey.getEncoded().length, domain.length);
+		System.arraycopy(username, 0, c, pubKey.getEncoded().length + domain.length, username.length);
+		newPass.put(new String(c), password);
 	}
 
 	public byte[] get(PublicKey publicKey, byte[] domain, byte[] username){
 		System.out.println("Server executed: Retrieve_password");
-		byte[] pass = null;
-		try {
-			pass = getMapValue(publicKey, domain, username);
-		} catch (UnsupportedEncodingException e) {
-			e.printStackTrace();
+		byte[] c = new byte[pubKey.getEncoded().length + domain.length + username.length];
+		System.arraycopy(pubKey.getEncoded(), 0, c, 0, pubKey.getEncoded().length);
+		System.arraycopy(domain, 0, c, pubKey.getEncoded().length, domain.length);
+		System.arraycopy(username, 0, c, pubKey.getEncoded().length + domain.length, username.length);
+		
+		byte[] password_retrieved = newPass.get(new String(c));
+		if(password_retrieved != null){
+			return password_retrieved;
+		}else {
+			return null;
 		}
-		return pass;
 	}
 
-
-	public String close(){
-		System.out.println("Server executed: Close");
-		return "Success";
-	}
-
-	public long getNounce(){
+	public long getNonce(){
 		long res = 0;
 		try {
 			SecureRandom random = SecureRandom.getInstance("SHA1PRNG");
 			res = random.nextLong();
-			while(usedNounces.contains(res)){
+			while(usedNonces.contains(res)){
 				res = random.nextLong();
 			}
-			usedNounces.add(res);
+			usedNonces.add(res);
 		} catch (NoSuchAlgorithmException e) {
 			e.printStackTrace();
 			return 0;
@@ -177,8 +138,8 @@ public class Server {
 
 		Server server = new Server();
 		server.newPass = new HashMap<String, byte[]>();
-		server.nounces = new HashMap<PublicKey, Long>();
-		server.usedNounces = new ArrayList<Long>();
+		server.nonces = new HashMap<PublicKey, Long>();
+		server.usedNonces = new ArrayList<Long>();
 		server.registeredKeys = new ArrayList<PublicKey>();
 
 		KeyStore ks  = server.getKeyStore("olaola");

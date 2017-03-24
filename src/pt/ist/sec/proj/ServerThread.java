@@ -13,10 +13,13 @@ public class ServerThread extends Thread {
 
 	private Socket socket;
 	private Server server;
-	
+	Crypto crypto;
 	static PublicKey pubKey;
 	static PrivateKey privKey;
 	byte[] sign_pub;
+	
+	ObjectInputStream objIn;
+	ObjectOutputStream objOut;
 	
 	boolean verbose = false;
 
@@ -24,11 +27,37 @@ public class ServerThread extends Thread {
 		this.socket = clientSocket;
 		this.server = server;
 	}
+	
+	public void sendSignedMessage(String func, PublicKey pubKey, byte[] sign, String res){
+		SignedMessage msg = new SignedMessage(func,pubKey, sign, res, null, null);
+		try {
+			objOut.writeObject(msg);
+		} catch (IOException e) {
+			System.out.println("Error sending SignedMessage ");
+		}
+	}
+	
+	public boolean validMessageSignatures(Message m, boolean dom, boolean user, boolean pass, boolean nonce){
+		boolean valid = false;
+		if(dom){
+			valid = crypto.signature_verify(m.getSig_domain(), m.getPublicKey(), m.getDomain());
+		}
+		if(user){
+			valid = crypto.signature_verify(m.getSig_username(), m.getPublicKey(), m.getUsername());
+		}
+		if(pass){
+			valid = crypto.signature_verify(m.getSig_password(), m.getPublicKey(), m.getPassword());
+		}
+		if(nonce){
+			valid = crypto.signature_verify(m.getSig_nonce(), m.getPublicKey(), m.getNonce().toString().getBytes());
+		}
+		return valid;
+	}
 
 	public void run() {
-		ObjectInputStream objIn = null;
-		ObjectOutputStream objOut = null;
-		Crypto crypto = new Crypto();
+		objIn = null;
+		objOut = null;
+		crypto = new Crypto();
 		try {
 			objIn = new ObjectInputStream(socket.getInputStream());
 			objOut = new ObjectOutputStream(socket.getOutputStream());
@@ -52,72 +81,48 @@ public class ServerThread extends Thread {
 					SignedMessage resMsg;
 					if(!server.getRegisteredKeys().contains(m.getPublicKey())){
 						System.out.println("Please Register first!");
-						resMsg = new SignedMessage("nounce",pubKey,sign_pub ,"register_fail", null, null);
+						resMsg = new SignedMessage(null,pubKey,sign_pub ,"register_fail", null, null);
 						objOut.writeObject(resMsg);
 						continue;
 					}
 					if(m.getFunctionName().equals("save_password")){
-						ver_d = crypto.signature_verify(m.getSig_domain(), m.getPublicKey(), m.getDomain());
-						ver_u = crypto.signature_verify(m.getSig_username(), m.getPublicKey(), m.getUsername());
-						ver_p = crypto.signature_verify(m.getSig_password(), m.getPublicKey(), m.getPassword());
-						ver_n = crypto.signature_verify(m.getSig_nonce(), m.getPublicKey(), m.getNonce().toString().getBytes());
-						if(ver_d && ver_u && ver_p && ver_n){
+						if(validMessageSignatures(m,true,true,true,true)){
 							if(verbose) {
-							System.out.println("Expected nonce: " + server.getNounces().get(m.getPublicKey()));
-							System.out.println("Nonce received by server: " + m.getNonce());
+								System.out.println("Expected nonce: " + server.getNonces().get(m.getPublicKey()));
+								System.out.println("Nonce received by server: " + m.getNonce());
 							}
-							Long n_compare = server.getNounces().get(m.getPublicKey());
-							if((long)n_compare != ((long)m.getNonce())){ System.out.println("Different Nonce, reject"); continue; }
+							Long n_compare = server.getNonces().get(m.getPublicKey());
+							if((long)n_compare != ((long)m.getNonce())){
+								System.out.println("Different Nonce, reject"); 
+								continue; 
+							}
 							System.out.println("DUP Signature verified successfully!");
-							server.put(m.getPublicKey(), m.getDomain(), m.getUsername(), m.getPassword());	
-							
-							Long nounce = server.getNounce();
-							if(verbose) {
-							System.out.println("Generated nonce: " + nounce);
-							}
-							server.getNounces().put(m.getPublicKey(), nounce);
-							if(nounce != 0){
-								if(verbose) {
-								System.out.println("Nonce that is going to be send: "+ nounce.toString());
-								}
-								byte[] sign_nounce = crypto.signature_generate(nounce.toString().getBytes("UTF-8"), privKey);								
-								resMsg = new SignedMessage("register", pubKey, sign_pub, "success", nounce, sign_nounce);
-								objOut.writeObject(resMsg);
-							}else{
-								System.out.println("Error generating nonce (serverThread)");
-								resMsg = new SignedMessage("register", pubKey, sign_pub, "fail", null, null);
-								objOut.writeObject(resMsg);
-							}
+							server.put(m.getPublicKey(), m.getDomain(), m.getUsername(), m.getPassword());
+							sendSignedMessage(null, pubKey, sign_pub, "success");
 						} else {
 							System.out.println("Signature not valid!");
-							resMsg = new SignedMessage("register", pubKey, sign_pub, "fail", null, null);
-							objOut.writeObject(resMsg);
+							sendSignedMessage(null, pubKey, sign_pub, "fail");
 						}
 					}
 					else if(m.getFunctionName().equals("retrieve_password")){
-						ver_d = crypto.signature_verify(m.getSig_domain(), m.getPublicKey(), m.getDomain());
-						ver_u = crypto.signature_verify(m.getSig_username(), m.getPublicKey(), m.getUsername());
-						ver_n = crypto.signature_verify(m.getSig_nonce(), m.getPublicKey(), m.getNonce().toString().getBytes());
-						if(ver_d && ver_u && ver_n) {
-							Long n_compare = server.getNounces().get(m.getPublicKey());
+						if(validMessageSignatures(m, true, true, false, true)) {
+							Long n_compare = server.getNonces().get(m.getPublicKey());
 							if(verbose) {
-							System.out.println(n_compare + " " + m.getNonce());
+								System.out.println(n_compare + " " + m.getNonce());
 							}
-							if((long)n_compare != (long)m.getNonce()){ System.out.println("Repeated Nonce, possible replay attack"); continue; }
+							if((long)n_compare != (long)m.getNonce()){ 
+								System.out.println("Repeated Nonce, possible replay attack");
+								sendSignedMessage(null, pubKey, sign_pub, "invalid message");
+							}
 							System.out.println("Signature verified successfully!");
-							Long nonce = server.getNounce();
-							server.getNounces().put(m.getPublicKey(), nonce);
-							if(verbose) {
-							System.out.println("Generated nonce: " + nonce);
-							}
+							
 							byte[] pass = server.get(m.getPublicKey(), m.getDomain(), m.getUsername());
-							Message m2 = new Message(null, pubKey, null, null, crypto.signature_generate(pass, privKey), null, null, pass, nonce, crypto.signature_generate(nonce.toString().getBytes(), privKey)); 
+							Message m2 = new Message(null, pubKey, null, null, crypto.signature_generate(pass, privKey), null, null, pass, null, null); 
 							objOut.writeObject(m2);
 						}
 						else {
 							System.out.println("Signature not valid!");
-							resMsg = new SignedMessage("register", pubKey, sign_pub, "Regitered with success", null, null);
-							objOut.writeObject(resMsg);
+							sendSignedMessage(null, pubKey, sign_pub, "invalid message");
 						}
 					}
 				}
@@ -127,70 +132,37 @@ public class ServerThread extends Thread {
 					boolean valid = crypto.signature_verify(m.getSign(), m.getPubKey(), m.getPubKey().getEncoded());
 					SignedMessage resMsg;
 					if(!valid){
-						resMsg = new SignedMessage("register", pubKey, sign_pub, "error signature", null, null);
-						objOut.writeObject(resMsg);
+						sendSignedMessage(null, pubKey, sign_pub,"invalid signature");
 					}
 					if(m.getFunc().equals("register")){	
 						SignedMessage sm = server.register(m);
-						String result = sm.getRes();
-						Long nounce = sm.getNounce();
-						if(result.equals("success")){
-							System.out.println("Signature verified successfully!");
-							if(verbose) {
-							System.out.println("Generated nonce: " + nounce);
-							}
-							byte[] sig_nonce = crypto.signature_generate(nounce.toString().getBytes(), server.privKey);
-							resMsg = new SignedMessage("register", pubKey, sign_pub, "success", nounce, sig_nonce);
-							objOut.writeObject(resMsg);
-						}else if (result.equals("used key")){
-							if(verbose) {
-							System.out.println("Generated nonce: " + nounce);
-							}
-							byte[] sig_nonce = crypto.signature_generate(nounce.toString().getBytes(), server.privKey);
-							resMsg = new SignedMessage("register",pubKey,sign_pub ,"used key", nounce, sig_nonce);
-							objOut.writeObject(resMsg);
-						}
-					}else if(m.getFunc().equals("nounce")){
-						Long nounce= server.getNounce();
-						server.getNounces().put(m.getPubKey(), nounce);
+						sendSignedMessage(null, pubKey, sign_pub, sm.getRes());
+					}else if(m.getFunc().equals("nonce")){
+						Long Nonce= server.getNonce();
+						server.getNonces().put(m.getPubKey(), Nonce);
 						if(verbose) {
-						System.out.println("Genereated nonce: " + nounce);
+						System.out.println("Genereated nonce: " + Nonce);
 						}
-						if(nounce != 0){
+						if(Nonce != 0){
 							if(verbose) {
-							System.out.println("Nonce that is going to be send: "+nounce.toString());
+							System.out.println("Nonce that is going to be send: "+Nonce.toString());
 							}
-							byte[] sign_nounce = crypto.signature_generate(nounce.toString().getBytes("UTF-8"), privKey);
-							resMsg = new SignedMessage("nounce",pubKey,sign_pub, "success", nounce, sign_nounce);
+							byte[] sign_Nonce = crypto.signature_generate(Nonce.toString().getBytes("UTF-8"), privKey);
+							resMsg = new SignedMessage("nonce",pubKey,sign_pub, "success", Nonce, sign_Nonce);
 							objOut.writeObject(resMsg);
 						}else{
-							resMsg = new SignedMessage("nounce",pubKey,sign_pub ,"fail", null, null);
-							objOut.writeObject(resMsg);
+							sendSignedMessage(null, pubKey, sign_pub, "fail");
 						}
 						
 					}else if(m.getFunc().equals("close")){
-						resMsg = new SignedMessage("close",pubKey, sign_pub,"closed", null, null);
-						objOut.writeObject(resMsg);
+						sendSignedMessage(null, pubKey, sign_pub, "closed");
 						connectionOpen = false;
-						server.close();	
 					}
-				}/*else if(input==null){
-					server.close();
-				}*/
-			} catch (ClassNotFoundException e) {
-				e.printStackTrace();
-				connectionOpen = false;
-			} catch (EOFException e) {
-				//e.printStackTrace();
-				System.out.println("Exiting");
-				connectionOpen = false;
-				//System.exit(0);
-			} catch (IOException e) {
-				//e.printStackTrace();
+				}
+			} catch (ClassNotFoundException | IOException e) {
 				System.out.println("Exiting");
 				connectionOpen = false;
 			}
 		}
 	}
-
 }
