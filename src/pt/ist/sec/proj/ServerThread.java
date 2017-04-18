@@ -38,20 +38,22 @@ public class ServerThread extends Thread {
 	}
 	
 	public boolean validMessageSignatures(Message m, boolean dom, boolean user, boolean pass, boolean nonce){
-		boolean valid = false;
+		boolean valid1,valid2,valid3,valid4;
+		valid1=valid2=valid3=valid4= true;
+		
 		if(dom){
-			valid = crypto.signature_verify(m.getSig_domain(), m.getPublicKey(), m.getDomain());
+			valid1 = crypto.signature_verify(m.getSig_domain(), m.getPublicKey(), m.getDomain());
 		}
 		if(user){
-			valid = crypto.signature_verify(m.getSig_username(), m.getPublicKey(), m.getUsername());
+			valid2 = crypto.signature_verify(m.getSig_username(), m.getPublicKey(), m.getUsername());
 		}
 		if(pass){
-			valid = crypto.signature_verify(m.getSig_password(), m.getPublicKey(), m.getPassword());
+			valid3 = crypto.signature_verify(m.getSig_password(), m.getPublicKey(), m.getPassword());
 		}
 		if(nonce){
-			valid = crypto.signature_verify(m.getSig_nonce(), m.getPublicKey(), m.getNonce().toString().getBytes());
+			valid4 = crypto.signature_verify(m.getSig_nonce(), m.getPublicKey(), m.getNonce().toString().getBytes());
 		}
-		return valid;
+		return valid1 & valid2 & valid3 & valid4 ;
 	}
 
 	public void run() {
@@ -160,7 +162,7 @@ public class ServerThread extends Thread {
 					}
 				}
 			} catch (ClassNotFoundException | IOException e) {
-				System.out.println("Exiting");
+				System.out.println("Thread killed");
 				connectionOpen = false;
 			}
 		}

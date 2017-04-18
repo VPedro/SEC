@@ -179,13 +179,12 @@ public class Server {
 			server.serverSocket = create(1025, 1030);			
 			while(true){
 				serverClient = server.serverSocket.accept();
-				System.out.println("Started on port " + port);
+				System.out.println("Started thread on port " + port);
 				new ServerThread(serverClient, server).start();
 			}
 			//server.serverSocket.close();
 
 		} catch (IOException e) {
-			System.out.println("COCO");
 			e.printStackTrace();
 		}
 	}

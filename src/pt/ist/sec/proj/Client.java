@@ -173,6 +173,7 @@ public class Client {
 			default:
 				System.out.println("Invalid argument. Try again!");
 			}
+			System.out.println("");
 		}
 		s.close();
 	}

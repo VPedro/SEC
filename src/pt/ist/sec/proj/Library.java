@@ -20,7 +20,7 @@ public class Library {
 	ObjectInputStream[] inObject;
 	DataOutputStream[] outData;
 	DataInputStream[] inData;
-	int numServers = 5;
+	int numServers = 3;
 
 	static PublicKey pubKey;
 	static PrivateKey privKey;
@@ -52,7 +52,6 @@ public class Library {
 
 				if(!setKeys(keystore, alias, password))
 					return false;
-
 
 			} catch (UnknownHostException e) {
 				e.printStackTrace();
@@ -210,7 +209,7 @@ public class Library {
 				return new String(b, "UTF-8");
 			} catch (UnsupportedEncodingException e) {
 				if(verbose) {
-					System.out.println("Result from server: " );
+					System.out.println("Password store on server: " );
 					e.printStackTrace();
 				}
 			}
