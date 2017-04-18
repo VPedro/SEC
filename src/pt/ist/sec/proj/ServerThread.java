@@ -106,7 +106,7 @@ public class ServerThread extends Thread {
 						if(validMessageSignatures(m, true, true, false, true)) {
 							Long n_compare = server.getNonces().get(m.getPublicKey());
 							if(verbose) {
-								System.out.println(n_compare + " " + m.getNonce());
+								System.out.println("Compare " + n_compare + " " + m.getNonce());
 							}
 							if((long)n_compare != (long)m.getNonce()){ 
 								System.out.println("Repeated Nonce, possible replay attack");

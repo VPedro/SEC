@@ -40,7 +40,7 @@ public class Library {
 		inObject = new ObjectInputStream[numServers];
 		outData = new DataOutputStream[numServers];
 		inData = new DataInputStream[numServers];
-		
+
 		nextNonce = new Long[numServers];
 
 		for(int i=0; i<numServers; i++) {
@@ -147,7 +147,7 @@ public class Library {
 	}
 
 	public void save_password(byte[] domain, byte[] username, byte[] password) throws IOException {
-		
+
 		for(int i=0 ; i<numServers; i++) {
 			nextNonce[i] = getNonce(i);
 			byte[] hash_dom = crypto.hash_sha256(domain);
@@ -180,73 +180,81 @@ public class Library {
 	}
 
 	public String retrieve_password(byte[] domain, byte[] username){
-		/*nextNonce = getNonce();
+		System.out.println(nextNonce[0]);
+		System.out.println(nextNonce[1]);
+		System.out.println(nextNonce[2]);
+		for(int i=0 ; i<numServers; i++) {
+			nextNonce[i] = getNonce(i);
 
-		byte[] hash_dom = crypto.hash_sha256(domain);
-		byte[] hash_user = crypto.hash_sha256(username);
-
-		Message msg = createMessage("retrieve_password", hash_dom, hash_user, null, nextNonce);
-		Object o = null;
-		try {
-			outObject[0].writeObject(msg);
-			o = (Object)inObject[0].readObject();
-		} catch (IOException | ClassNotFoundException e) {
-			e.printStackTrace();
-		}
-		if(o instanceof SignedMessage){
-			if(((SignedMessage) o).getRes().equals("register_fail")){
-				System.out.println("You are not registered!");
-				return "fail";
-			}else if(((SignedMessage) o).getRes().equals("invalid message")){
-				System.out.println("the message was invalid");
-				return "fail";
-			}
-		}
-		//TODO fazer as verificaçoes como no serverThred? com um func
-		Message m = (Message)o;
-		boolean ver_p = false;
-		if(m.getPassword() != null) {
-			ver_p = crypto.signature_verify(m.getSig_password(), m.getPublicKey(), m.getPassword());
-		}
-		if(ver_p){ 	
-
-			byte[] b = crypto.decrypt(m.getPassword(), privKey);
-			if (b == null){return null;}
+			byte[] hash_dom = crypto.hash_sha256(domain);
+			byte[] hash_user = crypto.hash_sha256(username);
+			System.out.println("Sending to server number: " + i);
+			Message msg = createMessage("retrieve_password", hash_dom, hash_user, null, nextNonce[i]);
+			Object o = null;
 			try {
-				return new String(b, "UTF-8");
-			} catch (UnsupportedEncodingException e) {
-				if(verbose) {
-					System.out.println("Password store on server: " );
-					e.printStackTrace();
+				outObject[i].writeObject(msg);
+				o = (Object)inObject[i].readObject();
+			} catch (IOException | ClassNotFoundException e) {
+				e.printStackTrace();
+			}
+			if(o instanceof SignedMessage){
+				if(((SignedMessage) o).getRes().equals("register_fail")){
+					System.out.println("You are not registered!");
+					return "fail";
+				}else if(((SignedMessage) o).getRes().equals("invalid message")){
+					System.out.println("the message was invalid");
+					return "fail";
 				}
 			}
-		}else{
-			System.out.println("password signature not valid");
-		}*/
+			//TODO fazer as verificaçoes como no serverThred? com um func
+			Message m = (Message)o;
+			boolean ver_p = false;
+			if(m.getPassword() != null) {
+				ver_p = crypto.signature_verify(m.getSig_password(), m.getPublicKey(), m.getPassword());
+			}
+			if(ver_p){ 	
+
+				byte[] b = crypto.decrypt(m.getPassword(), privKey);
+				if (b == null){return null;}
+				try {
+					System.out.println(new String(b, "UTF-8"));
+					//return new String(b, "UTF-8");
+				} catch (UnsupportedEncodingException e) {
+					if(verbose) {
+						System.out.println("Password store on server: " );
+						e.printStackTrace();
+					}
+				}
+			}else{
+				System.out.println("password signature not valid");
+			}
+		}
 		return null;
 	}
 
 
 	public void close(){
-		//nextNonce = getNonce();
-		//FIXME falta enviar o nonce e verificar do lado do server
+		for(int i=0 ; i<numServers; i++) {
+			nextNonce[i] = getNonce(i);
+			//FIXME falta enviar o nonce e verificar do lado do server
 
-		byte[] sig_pub = crypto.signature_generate(pubKey.getEncoded(), privKey);
-		sendSignedMessage("close", pubKey, sig_pub, null, null);
-		try {
-			SignedMessage resMsg = (SignedMessage)inObject[0].readObject();
-			if(verbose) {
-				System.out.println("Result from server: " + resMsg.getRes());
+			byte[] sig_pub = crypto.signature_generate(pubKey.getEncoded(), privKey);
+			sendSignedMessage(i, "close", pubKey, sig_pub, null, null);
+			try {
+				SignedMessage resMsg = (SignedMessage)inObject[i].readObject();
+				if(verbose) {
+					System.out.println("Result from server: " + resMsg.getRes());
+				}
+			} catch (IOException | ClassNotFoundException e) {
+				System.out.println("could not close in server");
 			}
-		} catch (IOException | ClassNotFoundException e) {
-			System.out.println("could not close in server");
 		}
 	}
 
-	public void sendSignedMessage(String func, PublicKey pubKey, byte[] sign, Long nonce, byte[] signNonce){
+	public void sendSignedMessage(int serverID, String func, PublicKey pubKey, byte[] sign, Long nonce, byte[] signNonce){
 		SignedMessage msg = new SignedMessage(func,pubKey, sign, null, nonce, signNonce);
 		try {
-			outObject[0].writeObject(msg);
+			outObject[serverID].writeObject(msg);
 		} catch (IOException e) {
 			System.out.println("Error sending SignedMessage");
 		}
