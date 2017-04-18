@@ -21,7 +21,7 @@ public class ServerThread extends Thread {
 	ObjectInputStream objIn;
 	ObjectOutputStream objOut;
 	
-	boolean verbose = false;
+	boolean verbose = true;
 
 	public ServerThread(Socket clientSocket, Server server) {
 		this.socket = clientSocket;
@@ -71,12 +71,8 @@ public class ServerThread extends Thread {
 		privKey = server.getPrivKey();
 		sign_pub = crypto.signature_generate(pubKey.getEncoded(), privKey);
 		boolean connectionOpen = true;
-		boolean ver_d, ver_u, ver_p, ver_n;
 		while (connectionOpen) {
 			try {
-				ver_d = true;
-				ver_u = true;
-				ver_p = true;
 				input = objIn.readObject();
 				if (input instanceof Message) {
 					Message m = (Message)input;

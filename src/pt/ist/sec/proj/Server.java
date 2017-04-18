@@ -26,7 +26,7 @@ public class Server {
 	private Map<PublicKey, Long> nonces;
 	private List<PublicKey> registeredKeys;
 	private List<Long> usedNonces;
-	boolean verbose = false;
+	boolean verbose = true;
 	static int port = 1025;
 
 	public Map<PublicKey, Long> getNonces(){
@@ -127,6 +127,8 @@ public class Server {
 				res = random.nextLong();
 			}
 			usedNonces.add(res);
+			//enviar para a library que vai dar update a todos os servers (used nounces)
+			
 		} catch (NoSuchAlgorithmException e) {
 			e.printStackTrace();
 			return 0;

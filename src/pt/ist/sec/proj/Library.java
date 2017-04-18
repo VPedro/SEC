@@ -25,8 +25,8 @@ public class Library {
 	static PublicKey pubKey;
 	static PrivateKey privKey;
 
-	private Long nextNonce;
-	boolean verbose = false;
+	private Long[] nextNonce;
+	boolean verbose = true;
 
 	Crypto crypto;
 
@@ -41,6 +41,8 @@ public class Library {
 		outData = new DataOutputStream[numServers];
 		inData = new DataInputStream[numServers];
 		
+		nextNonce = new Long[numServers];
+
 		for(int i=0; i<numServers; i++) {
 			try {
 				System.out.println("i = " + i);
@@ -68,14 +70,14 @@ public class Library {
 	}
 
 
-	private long getNonce() {		
+	private long getNonce(int serverID) {		
 		byte[] sig_pub = crypto.signature_generate(pubKey.getEncoded(), privKey);
 
 		SignedMessage msg = new SignedMessage("nonce", pubKey, sig_pub,  null, null, null);
 		SignedMessage resMsg = null;
 		try {
-			outObject[0].writeObject(msg);
-			resMsg = (SignedMessage)inObject[0].readObject();
+			outObject[serverID].writeObject(msg);
+			resMsg = (SignedMessage)inObject[serverID].readObject();
 
 			boolean valid = crypto.signature_verify(resMsg.getSignNonce(), resMsg.getPubKey(),  resMsg.getNonce().toString().getBytes("UTF-8"));
 			if(valid ){
@@ -120,16 +122,18 @@ public class Library {
 
 		SignedMessage msg = new SignedMessage("register", pubKey, sig_pub, null, null, null);
 		SignedMessage resMsg = null;
-		try {
-			outObject[0].writeObject(msg);
-			resMsg = (SignedMessage)inObject[0].readObject();
-			if(resMsg.getRes().equals("success")){
-				System.out.println("Registered in server with success");
-			}else if(resMsg.getRes().equals("used key")){
-				System.out.println("You are already registered");
+		for(int i=0 ; i<numServers; i++) {
+			try {
+				outObject[i].writeObject(msg);
+				resMsg = (SignedMessage)inObject[i].readObject();
+				if(resMsg.getRes().equals("success")){
+					System.out.println("Registered in server with success");
+				}else if(resMsg.getRes().equals("used key")){
+					System.out.println("You are already registered");
+				}
+			} catch (IOException | ClassNotFoundException e) {
+				e.printStackTrace();
 			}
-		} catch (IOException | ClassNotFoundException e) {
-			e.printStackTrace();
 		}
 	}
 
@@ -143,37 +147,40 @@ public class Library {
 	}
 
 	public void save_password(byte[] domain, byte[] username, byte[] password) throws IOException {
-		nextNonce = getNonce();
-		byte[] hash_dom = crypto.hash_sha256(domain);
-		byte[] hash_user = crypto.hash_sha256(username);
-		Message msg = createMessage("save_password", hash_dom, hash_user, password, nextNonce);
-		SignedMessage resMsg = null;
-		try {
-			outObject[0].writeObject(msg);
-			resMsg = (SignedMessage)inObject[0].readObject();
-			if(resMsg.getRes().equals("register_fail")){
-				System.out.println("You are not registered");
-				return;
-			}
-			boolean valid = crypto.signature_verify(resMsg.getSign(), resMsg.getPubKey(), resMsg.getPubKey().getEncoded());
-			if(valid){
-				if(resMsg.getRes().equals("success")){
-					System.out.println("Password saved with success");
+		
+		for(int i=0 ; i<numServers; i++) {
+			nextNonce[i] = getNonce(i);
+			byte[] hash_dom = crypto.hash_sha256(domain);
+			byte[] hash_user = crypto.hash_sha256(username);
+			Message msg = createMessage("save_password", hash_dom, hash_user, password, nextNonce[i]);
+			SignedMessage resMsg = null;
+			try {
+				outObject[i].writeObject(msg);
+				resMsg = (SignedMessage)inObject[i].readObject();
+				if(resMsg.getRes().equals("register_fail")){
+					System.out.println("You are not registered");
+					return;
 				}
-				else{
-					System.out.println("Error saving your password!");
+				boolean valid = crypto.signature_verify(resMsg.getSign(), resMsg.getPubKey(), resMsg.getPubKey().getEncoded());
+				if(valid){
+					if(resMsg.getRes().equals("success")){
+						System.out.println("Password saved with success");
+					}
+					else{
+						System.out.println("Error saving your password!");
+					}
+				}else{
+					System.out.println("server signature not valid");
 				}
-			}else{
-				System.out.println("server signature not valid");
+			} catch (IOException | ClassNotFoundException e) {
+				//e.printStackTrace();
+				System.out.println("Could not save password!");
 			}
-		} catch (IOException | ClassNotFoundException e) {
-			e.printStackTrace();
-			System.out.println("Could not save password!");
 		}
 	}
 
 	public String retrieve_password(byte[] domain, byte[] username){
-		nextNonce = getNonce();
+		/*nextNonce = getNonce();
 
 		byte[] hash_dom = crypto.hash_sha256(domain);
 		byte[] hash_user = crypto.hash_sha256(username);
@@ -215,13 +222,13 @@ public class Library {
 			}
 		}else{
 			System.out.println("password signature not valid");
-		}
+		}*/
 		return null;
 	}
 
 
 	public void close(){
-		nextNonce = getNonce();
+		//nextNonce = getNonce();
 		//FIXME falta enviar o nonce e verificar do lado do server
 
 		byte[] sig_pub = crypto.signature_generate(pubKey.getEncoded(), privKey);
