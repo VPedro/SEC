@@ -27,15 +27,16 @@ public class Server {
 	private List<PublicKey> registeredKeys;
 	private List<Long> usedNonces;
 	boolean verbose = false;
+	static int port = 1025;
 
 	public Map<PublicKey, Long> getNonces(){
 		return nonces;
 	}
-	
+
 	public List<Long> getUsedNonces(){
 		return usedNonces;
 	}
-	
+
 	PublicKey pubKey;
 	PrivateKey privKey;
 
@@ -108,7 +109,7 @@ public class Server {
 		System.arraycopy(pubKey.getEncoded(), 0, c, 0, pubKey.getEncoded().length);
 		System.arraycopy(domain, 0, c, pubKey.getEncoded().length, domain.length);
 		System.arraycopy(username, 0, c, pubKey.getEncoded().length + domain.length, username.length);
-		
+
 		byte[] password_retrieved = newPass.get(new String(c));
 		if(password_retrieved != null){
 			return password_retrieved;
@@ -133,6 +134,32 @@ public class Server {
 		return res;
 	}
 
+	public static ServerSocket create(int min, int max) throws IOException {
+	    for (port=min; port <= max; port++) {
+	        try {
+	            return new ServerSocket(port);
+	        } catch (IOException e) {
+	            continue; // try next port
+	        }
+	    }
+
+	    // if the program gets here, no port in the range was found
+	    throw new IOException("no free port found");
+	}
+
+	public boolean connectServer(int port) {
+
+		Socket s = null;
+		try {
+			s = new Socket("localhost", port);
+			return true;
+		}
+		catch(IOException e) {
+			return false;
+		}
+	}
+
+	
 
 	public static void main(String args[]){
 
@@ -147,16 +174,18 @@ public class Server {
 
 		System.out.println("===== Server Started =====");
 		Socket serverClient = null;
-
+	
 		try {
-			server.serverSocket = new ServerSocket(1025);				
+			server.serverSocket = create(1025, 1030);			
 			while(true){
 				serverClient = server.serverSocket.accept();
+				System.out.println("Started on port " + port);
 				new ServerThread(serverClient, server).start();
 			}
 			//server.serverSocket.close();
 
 		} catch (IOException e) {
+			System.out.println("COCO");
 			e.printStackTrace();
 		}
 	}

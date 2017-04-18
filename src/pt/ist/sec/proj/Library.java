@@ -14,12 +14,13 @@ import java.security.*;
 
 public class Library {
 
-	/*************************************** CLIENT ***************************************/
-	private Socket client;
-	ObjectOutputStream outObject;
-	ObjectInputStream inObject;
-	DataOutputStream outData;
-	DataInputStream inData;
+	/*************************************** clients ***************************************/
+	private Socket[] clients;
+	ObjectOutputStream[] outObject;
+	ObjectInputStream[] inObject;
+	DataOutputStream[] outData;
+	DataInputStream[] inData;
+	int numServers = 5;
 
 	static PublicKey pubKey;
 	static PrivateKey privKey;
@@ -31,30 +32,40 @@ public class Library {
 
 	public boolean init(KeyStore keystore, String alias, String password){
 
-		String serverName = "";
+		String serverName = "localhost";
 		int serverPort = 1025;
 		crypto = new Crypto();
-		try {
-			client = new Socket(serverName, serverPort);
-			outObject = new ObjectOutputStream(client.getOutputStream());
-			inObject = new ObjectInputStream(client.getInputStream());
-			outData = new DataOutputStream(client.getOutputStream());
-			inData = new DataInputStream(client.getInputStream());
+		clients = new Socket[numServers];
+		outObject = new ObjectOutputStream[numServers];
+		inObject = new ObjectInputStream[numServers];
+		outData = new DataOutputStream[numServers];
+		inData = new DataInputStream[numServers];
+		
+		for(int i=0; i<numServers; i++) {
+			try {
+				System.out.println("i = " + i);
+				clients[i] = new Socket(serverName, serverPort+i);
+				outObject[i] = new ObjectOutputStream(clients[i].getOutputStream());
+				inObject[i] = new ObjectInputStream(clients[i].getInputStream());
+				outData[i] = new DataOutputStream(clients[i].getOutputStream());
+				inData[i] = new DataInputStream(clients[i].getInputStream());
 
-			if(!setKeys(keystore, alias, password))
+				if(!setKeys(keystore, alias, password))
+					return false;
+
+
+			} catch (UnknownHostException e) {
+				e.printStackTrace();
 				return false;
-
-			return true;
-		} catch (UnknownHostException e) {
-			e.printStackTrace();
-			return false;
-		} catch (ConnectException e1) {
-			System.out.println("Error initiating library, no server available");
-			return false;
-		} catch (IOException e) {
-			e.printStackTrace();
-			return false;
+			} catch (ConnectException e1) {
+				System.out.println("Error initiating library, no server available");
+				return false;
+			} catch (IOException e) {
+				e.printStackTrace();
+				return false;
+			}
 		}
+		return true;
 	}
 
 
@@ -64,8 +75,8 @@ public class Library {
 		SignedMessage msg = new SignedMessage("nonce", pubKey, sig_pub,  null, null, null);
 		SignedMessage resMsg = null;
 		try {
-			outObject.writeObject(msg);
-			resMsg = (SignedMessage)inObject.readObject();
+			outObject[0].writeObject(msg);
+			resMsg = (SignedMessage)inObject[0].readObject();
 
 			boolean valid = crypto.signature_verify(resMsg.getSignNonce(), resMsg.getPubKey(),  resMsg.getNonce().toString().getBytes("UTF-8"));
 			if(valid ){
@@ -111,8 +122,8 @@ public class Library {
 		SignedMessage msg = new SignedMessage("register", pubKey, sig_pub, null, null, null);
 		SignedMessage resMsg = null;
 		try {
-			outObject.writeObject(msg);
-			resMsg = (SignedMessage)inObject.readObject();
+			outObject[0].writeObject(msg);
+			resMsg = (SignedMessage)inObject[0].readObject();
 			if(resMsg.getRes().equals("success")){
 				System.out.println("Registered in server with success");
 			}else if(resMsg.getRes().equals("used key")){
@@ -139,8 +150,8 @@ public class Library {
 		Message msg = createMessage("save_password", hash_dom, hash_user, password, nextNonce);
 		SignedMessage resMsg = null;
 		try {
-			outObject.writeObject(msg);
-			resMsg = (SignedMessage)inObject.readObject();
+			outObject[0].writeObject(msg);
+			resMsg = (SignedMessage)inObject[0].readObject();
 			if(resMsg.getRes().equals("register_fail")){
 				System.out.println("You are not registered");
 				return;
@@ -164,15 +175,15 @@ public class Library {
 
 	public String retrieve_password(byte[] domain, byte[] username){
 		nextNonce = getNonce();
-		
+
 		byte[] hash_dom = crypto.hash_sha256(domain);
 		byte[] hash_user = crypto.hash_sha256(username);
 
 		Message msg = createMessage("retrieve_password", hash_dom, hash_user, null, nextNonce);
 		Object o = null;
 		try {
-			outObject.writeObject(msg);
-			o = (Object)inObject.readObject();
+			outObject[0].writeObject(msg);
+			o = (Object)inObject[0].readObject();
 		} catch (IOException | ClassNotFoundException e) {
 			e.printStackTrace();
 		}
@@ -192,7 +203,7 @@ public class Library {
 			ver_p = crypto.signature_verify(m.getSig_password(), m.getPublicKey(), m.getPassword());
 		}
 		if(ver_p){ 	
-			
+
 			byte[] b = crypto.decrypt(m.getPassword(), privKey);
 			if (b == null){return null;}
 			try {
@@ -213,11 +224,11 @@ public class Library {
 	public void close(){
 		nextNonce = getNonce();
 		//FIXME falta enviar o nonce e verificar do lado do server
-		
+
 		byte[] sig_pub = crypto.signature_generate(pubKey.getEncoded(), privKey);
 		sendSignedMessage("close", pubKey, sig_pub, null, null);
 		try {
-			SignedMessage resMsg = (SignedMessage)inObject.readObject();
+			SignedMessage resMsg = (SignedMessage)inObject[0].readObject();
 			if(verbose) {
 				System.out.println("Result from server: " + resMsg.getRes());
 			}
@@ -225,11 +236,11 @@ public class Library {
 			System.out.println("could not close in server");
 		}
 	}
-	
+
 	public void sendSignedMessage(String func, PublicKey pubKey, byte[] sign, Long nonce, byte[] signNonce){
 		SignedMessage msg = new SignedMessage(func,pubKey, sign, null, nonce, signNonce);
 		try {
-			outObject.writeObject(msg);
+			outObject[0].writeObject(msg);
 		} catch (IOException e) {
 			System.out.println("Error sending SignedMessage");
 		}
