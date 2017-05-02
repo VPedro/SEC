@@ -19,6 +19,8 @@ import java.util.Map;
 
 
 public class Server {
+	
+	//TODO func update nonce 
 
 	private ServerSocket serverSocket;
 	//FIXME estrutura q guarda a signature para cada pass recebida e garante nao repudio
@@ -27,7 +29,7 @@ public class Server {
 	private List<PublicKey> registeredKeys;
 	private List<Long> usedNonces;
 	boolean verbose = true;
-	static int port = 1025;
+	static int port = 1026;
 	static int ServerID;
 
 	public Server(String string) {
@@ -96,6 +98,7 @@ public class Server {
 		else{
 			registeredKeys.add(msg.getPubKey());
 			msg.setRes("success");
+			System.out.println("Registered with success");
 			return msg;
 		}
 	}
@@ -151,6 +154,7 @@ public class Server {
 	public static ServerSocket create(int min, int max) throws IOException {
 	    for (port=min; port <= max; port++) {
 	        try {
+	        	System.out.println("port:" + port);
 	            return new ServerSocket(port);
 	        } catch (IOException e) {
 	            continue; // try next port
@@ -161,17 +165,6 @@ public class Server {
 	    throw new IOException("no free port found");
 	}
 
-	public boolean connectServer(int port) {
-
-		Socket s = null;
-		try {
-			s = new Socket("localhost", port);
-			return true;
-		}
-		catch(IOException e) {
-			return false;
-		}
-	}
 
 	
 
@@ -191,7 +184,7 @@ public class Server {
 		Socket serverClient = null;
 	
 		try {
-			server.serverSocket = create(1025, 1030);			
+			server.serverSocket = create(port, port+5);			
 			while(true){
 				serverClient = server.serverSocket.accept();
 				System.out.println("Started thread on port " + port);
