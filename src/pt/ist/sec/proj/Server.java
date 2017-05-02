@@ -28,6 +28,11 @@ public class Server {
 	private List<Long> usedNonces;
 	boolean verbose = true;
 	static int port = 1025;
+	static int ServerID;
+
+	public Server(String string) {
+		ServerID = Integer.parseInt(string);
+	}
 
 	public Map<PublicKey, Long> getNonces(){
 		return nonces;
@@ -57,11 +62,12 @@ public class Server {
 		KeyStore ks = null;
 		try { //If KeyStore file already exists
 			//FIXME remove hardcoded alias and password
-			FileInputStream fis = new FileInputStream("serverkeystorefile.jce");	//Open the KeyStore file
+			String path = "keystores/server" +ServerID + ".jce";
+			FileInputStream fis = new FileInputStream(path);	//Open the KeyStore file
 			ks = KeyStore.getInstance("JCEKS"); //Create an instance of KeyStore of type “JCEKS”
 			ks.load(fis, pass.toCharArray()); //Load the key entries from the file into the KeyStore object.
 			fis.close();
-			System.out.println("KeyStore Loaded");
+			System.out.println("Loaded KeyStore "+ServerID);
 		} //create it if cannot find it
 		catch (FileNotFoundException e) {	
 			System.out.println("Please create a keystore using keytool first");
@@ -164,8 +170,9 @@ public class Server {
 	
 
 	public static void main(String args[]){
-
-		Server server = new Server();
+		
+		
+		Server server = new Server(args[0]);
 		server.newPass = new HashMap<String, byte[]>();
 		server.nonces = new HashMap<PublicKey, Long>();
 		server.usedNonces = new ArrayList<Long>();

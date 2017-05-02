@@ -28,7 +28,7 @@ public class Client {
 	public KeyStore getKeyStore(String pass){ //created with "olaola" as password
 		//KeyStore ks = null;
 		try { //If KeyStore file already exists
-			FileInputStream fis = new FileInputStream("keystorefile.jce");	//Open the KeyStore file
+			FileInputStream fis = new FileInputStream("keystores/keystorefile.jce");	//Open the KeyStore file
 			ks = KeyStore.getInstance("JCEKS"); //Create an instance of KeyStore of type “JCEKS”
 			ks.load(fis, pass.toCharArray()); //Load the key entries from the file into the KeyStore object.
 			fis.close();
@@ -38,7 +38,7 @@ public class Client {
 				ks = KeyStore.getInstance("JCEKS");
 				ks.load(null, pass.toCharArray()); // Create keystore 
 				//Create a new file to store the KeyStore object
-				java.io.FileOutputStream fos = new java.io.FileOutputStream("keystorefile.jce");
+				java.io.FileOutputStream fos = new java.io.FileOutputStream("/keystores/keystorefile.jce");
 				ks.store(fos, pass.toCharArray());
 				//Write the KeyStore into the file
 				fos.close();
