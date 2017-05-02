@@ -22,7 +22,7 @@ public class Library {
 	ObjectInputStream[] inObject;
 	DataOutputStream[] outData;
 	DataInputStream[] inData;
-	int numServers = 3;
+	static int numServers = 3;
 
 	static PublicKey pubKey;
 	static PrivateKey privKey;
@@ -198,6 +198,15 @@ public class Library {
 				System.out.println("Could not save password!");
 			}
 		}
+		
+		String res = getMajority(resAnswers);
+		if(res!=null){
+			return;
+		}
+		//apagar tudo o resto??
+		//nao temos de atualizar os que respondem mal disse o proj
+		
+		
 
 		//Verify if ackCount > N/2
 		if(ackCount < (numServers / 2)) {
@@ -337,5 +346,28 @@ public class Library {
 			System.out.println("Error sending SignedMessage");
 		}
 	}
-
+	
+	public String getMajority(String[] answers){
+		
+		
+		return null;
+	}
+	
+	public static String majority(String[] answers) {
+	    Map<String, Integer> count = new HashMap<String, Integer>();
+	    for (String s : answers) {
+	        if (count.containsKey(s)) {
+	        	count.put(s, count.get(s) + 1);
+	        } else {
+	        	count.put(s, 1);
+	        }
+	    }
+	    String majority = null;
+	    for (String key : count.keySet()) {
+	        if (count.get(key) > numServers / 2) {
+	        majority = key;
+	        }
+	    }
+	    return majority;
+	}
 }

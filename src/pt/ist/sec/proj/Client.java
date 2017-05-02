@@ -6,6 +6,8 @@ import java.io.IOException;
 import java.net.SocketException;
 import java.security.*;
 import java.security.cert.CertificateException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Scanner;
 
 public class Client {
@@ -54,6 +56,8 @@ public class Client {
 		}
 		return ks;
 	}
+	
+	
 	
 
 	public static void main(String args[]){
