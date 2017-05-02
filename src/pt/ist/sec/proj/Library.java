@@ -10,6 +10,8 @@ import java.net.ConnectException;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.security.*;
+import java.util.HashMap;
+import java.util.Map;
 
 
 public class Library {
@@ -20,7 +22,7 @@ public class Library {
 	ObjectInputStream[] inObject;
 	DataOutputStream[] outData;
 	DataInputStream[] inData;
-	int numServers = 3;
+	int numServers = 5;
 
 	static PublicKey pubKey;
 	static PrivateKey privKey;
@@ -73,11 +75,17 @@ public class Library {
 	private long getNonce(int serverID) {		
 		byte[] sig_pub = crypto.signature_generate(pubKey.getEncoded(), privKey);
 
-		SignedMessage msg = new SignedMessage("nonce", pubKey, sig_pub,  null, null, null);
+		SignedMessage msg = new SignedMessage("nonce", pubKey, sig_pub, null, null, null, null);
 		SignedMessage resMsg = null;
 		try {
 			outObject[serverID].writeObject(msg);
 			resMsg = (SignedMessage)inObject[serverID].readObject();
+			System.out.println("PROBLEMS");
+			//TODO
+			//ESTA MERDA POR ALGUMA RAZÃO ESTÁ A RECEBER O SIGNNONCE E NONCE A NULL, NO SEGUNDO SAVE
+			System.out.println(resMsg.getSignNonce());
+			System.out.println(resMsg.getPubKey());
+			System.out.println(resMsg.getNonce());
 
 			boolean valid = crypto.signature_verify(resMsg.getSignNonce(), resMsg.getPubKey(),  resMsg.getNonce().toString().getBytes("UTF-8"));
 			if(valid ){
@@ -120,7 +128,7 @@ public class Library {
 	public void register_user(){
 		byte[] sig_pub = crypto.signature_generate(pubKey.getEncoded(), privKey);
 
-		SignedMessage msg = new SignedMessage("register", pubKey, sig_pub, null, null, null);
+		SignedMessage msg = new SignedMessage("register", pubKey, sig_pub, null, null, null, null);
 		SignedMessage resMsg = null;
 		for(int i=0 ; i<numServers; i++) {
 			try {
@@ -148,6 +156,14 @@ public class Library {
 
 	public void save_password(byte[] domain, byte[] username, byte[] password) throws IOException {
 
+		String[] resAnswers = new String[numServers];
+		byte[][] valueAnswers = new byte[numServers][];
+		HashMap<String,Integer> majority = new HashMap<String, Integer>();
+		int ackCount = 0;
+
+		//TODO
+		//Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+
 		for(int i=0 ; i<numServers; i++) {
 			nextNonce[i] = getNonce(i);
 			byte[] hash_dom = crypto.hash_sha256(domain);
@@ -157,10 +173,15 @@ public class Library {
 			try {
 				outObject[i].writeObject(msg);
 				resMsg = (SignedMessage)inObject[i].readObject();
+				ackCount++;
+				resAnswers[i] = resMsg.getRes();
+				valueAnswers[i] = crypto.decrypt(resMsg.getValue(), privKey);
+
 				if(resMsg.getRes().equals("register_fail")){
 					System.out.println("You are not registered");
-					return;
+					//return;
 				}
+
 				boolean valid = crypto.signature_verify(resMsg.getSign(), resMsg.getPubKey(), resMsg.getPubKey().getEncoded());
 				if(valid){
 					if(resMsg.getRes().equals("success")){
@@ -177,6 +198,63 @@ public class Library {
 				System.out.println("Could not save password!");
 			}
 		}
+
+		//Verify if ackCount > N/2
+		if(ackCount < (numServers / 2)) {
+			System.out.println("Failed to save password, number of acks < N/2");
+			//TODO
+			return;
+		}
+		
+		//this is where we verify the answers from the servers
+		for(int i=0 ; i<numServers; i++) {
+			if(resAnswers[i] == null && valueAnswers[i] == null) {
+				continue;
+			}
+			if(majority.get(new String(valueAnswers[i], "UTF-8")) == null) {
+				majority.put(new String(valueAnswers[i], "UTF-8"), 1);
+			}
+			majority.put(new String(valueAnswers[i], "UTF-8"), majority.get(new String(valueAnswers[i], "UTF-8")) +1);
+		}
+
+		if(verbose) {
+			System.out.println("RECEIVED THIS:");
+			for(int i=0 ; i<numServers; i++) {
+				if(resAnswers[i] == null && valueAnswers[i] == null) {
+					continue;
+				}
+				System.out.println("Result: " + resAnswers[i]);
+				System.out.println("Password received: " + new String(valueAnswers[i], "UTF-8"));
+			}
+		}
+
+		int frequency = 0;
+		String key = "";
+
+		for(Map.Entry<String, Integer> e : majority.entrySet()) {
+			if(e.getValue() > frequency) {
+				key = e.getKey();
+				frequency = e.getValue();
+			}
+		}
+		System.out.println("Most frequent answer: " + key);
+
+		//Resend the most frequent answer to update all servers
+		for(int i=0 ; i<numServers; i++) {
+			nextNonce[i] = getNonce(i);
+			byte[] hash_dom = crypto.hash_sha256(domain);
+			byte[] hash_user = crypto.hash_sha256(username);
+			Message msg = createMessage("save_password", hash_dom, hash_user, key.getBytes(), nextNonce[i]);
+			outObject[i].writeObject(msg);
+			try {
+				//TODO
+				//We want to ignore this return message from each server
+				SignedMessage ignoreMsg = (SignedMessage)inObject[i].readObject();
+			} catch (ClassNotFoundException e1) {
+				e1.printStackTrace();
+			}
+		}
+
 	}
 
 	public String retrieve_password(byte[] domain, byte[] username){
@@ -252,7 +330,7 @@ public class Library {
 	}
 
 	public void sendSignedMessage(int serverID, String func, PublicKey pubKey, byte[] sign, Long nonce, byte[] signNonce){
-		SignedMessage msg = new SignedMessage(func,pubKey, sign, null, nonce, signNonce);
+		SignedMessage msg = new SignedMessage(func,pubKey, sign, null, null, nonce, signNonce);
 		try {
 			outObject[serverID].writeObject(msg);
 		} catch (IOException e) {

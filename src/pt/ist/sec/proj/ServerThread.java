@@ -28,8 +28,8 @@ public class ServerThread extends Thread {
 		this.server = server;
 	}
 	
-	public void sendSignedMessage(String func, PublicKey pubKey, byte[] sign, String res){
-		SignedMessage msg = new SignedMessage(func,pubKey, sign, res, null, null);
+	public void sendSignedMessage(String func, PublicKey pubKey, byte[] sign, String res, byte[] value){
+		SignedMessage msg = new SignedMessage(func,pubKey, sign, res, value, null, null);
 		try {
 			objOut.writeObject(msg);
 		} catch (IOException e) {
@@ -79,7 +79,7 @@ public class ServerThread extends Thread {
 					SignedMessage resMsg;
 					if(!server.getRegisteredKeys().contains(m.getPublicKey())){
 						System.out.println("Please Register first!");
-						resMsg = new SignedMessage(null,pubKey,sign_pub ,"register_fail", null, null);
+						resMsg = new SignedMessage(null,pubKey,sign_pub ,"register_fail", null, null, null);
 						objOut.writeObject(resMsg);
 						continue;
 					}
@@ -96,10 +96,10 @@ public class ServerThread extends Thread {
 							}
 							System.out.println("DUP Signature verified successfully!");
 							server.put(m.getPublicKey(), m.getDomain(), m.getUsername(), m.getPassword());
-							sendSignedMessage(null, pubKey, sign_pub, "success");
+							sendSignedMessage(null, pubKey, sign_pub, "success", m.getPassword());
 						} else {
 							System.out.println("Signature not valid!");
-							sendSignedMessage(null, pubKey, sign_pub, "fail");
+							sendSignedMessage(null, pubKey, sign_pub, "fail", null);
 						}
 					}
 					else if(m.getFunctionName().equals("retrieve_password")){
@@ -110,7 +110,8 @@ public class ServerThread extends Thread {
 							}
 							if((long)n_compare != (long)m.getNonce()){ 
 								System.out.println("Repeated Nonce, possible replay attack");
-								sendSignedMessage(null, pubKey, sign_pub, "invalid message");
+								//TODO
+								sendSignedMessage(null, pubKey, sign_pub, "invalid message", null);
 							}
 							System.out.println("Signature verified successfully!");
 							
@@ -120,7 +121,8 @@ public class ServerThread extends Thread {
 						}
 						else {
 							System.out.println("Signature not valid!");
-							sendSignedMessage(null, pubKey, sign_pub, "invalid message");
+							//TODO
+							//sendSignedMessage(null, pubKey, sign_pub, "invalid message");
 						}
 					}
 				}
@@ -130,11 +132,11 @@ public class ServerThread extends Thread {
 					boolean valid = crypto.signature_verify(m.getSign(), m.getPubKey(), m.getPubKey().getEncoded());
 					SignedMessage resMsg;
 					if(!valid){
-						sendSignedMessage(null, pubKey, sign_pub,"invalid signature");
+						sendSignedMessage(null, pubKey, sign_pub,"invalid signature", null);
 					}
 					if(m.getFunc().equals("register")){	
 						SignedMessage sm = server.register(m);
-						sendSignedMessage(null, pubKey, sign_pub, sm.getRes());
+						sendSignedMessage(null, pubKey, sign_pub, sm.getRes(), null);
 					}else if(m.getFunc().equals("nonce")){
 						Long Nonce= server.getNonce();
 						server.getNonces().put(m.getPubKey(), Nonce);
@@ -146,14 +148,18 @@ public class ServerThread extends Thread {
 							System.out.println("Nonce that is going to be send: "+Nonce.toString());
 							}
 							byte[] sign_Nonce = crypto.signature_generate(Nonce.toString().getBytes("UTF-8"), privKey);
-							resMsg = new SignedMessage("nonce",pubKey,sign_pub, "success", Nonce, sign_Nonce);
+							resMsg = new SignedMessage("nonce",pubKey,sign_pub, "success", null, Nonce, sign_Nonce);
+							System.out.println("GONNA SEND MY N0NCE");
+							System.out.println(resMsg.getSignNonce());
+							System.out.println(resMsg.getPubKey());
+							System.out.println(resMsg.getNonce());
 							objOut.writeObject(resMsg);
 						}else{
-							sendSignedMessage(null, pubKey, sign_pub, "fail");
+							sendSignedMessage(null, pubKey, sign_pub, "fail", null);
 						}
 						
 					}else if(m.getFunc().equals("close")){
-						sendSignedMessage(null, pubKey, sign_pub, "closed");
+						sendSignedMessage(null, pubKey, sign_pub, "closed", null);
 						connectionOpen = false;
 					}
 				}

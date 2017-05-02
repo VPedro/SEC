@@ -10,14 +10,16 @@ public class SignedMessage implements Serializable{
 	private PublicKey pubKey;
 	private byte[] sign;
 	private String res;
+	private byte[] value;
 	private Long nonce;
 	private byte[] signNonce;
 	
-	public SignedMessage(String func, PublicKey pubKey, byte[] sign, String res, Long nonce, byte[] signNonce) {
+	public SignedMessage(String func, PublicKey pubKey, byte[] sign, String res, byte[] value, Long nonce, byte[] signNonce) {
 		this.func = func;
 		this.pubKey = pubKey;
 		this.sign = sign;
 		this.res = res;
+		this.value = value;
 		this.nonce = nonce;
 		this.signNonce = signNonce;
 	}
@@ -63,6 +65,16 @@ public class SignedMessage implements Serializable{
 	}
 	public void setSignNonce(byte[] signNonce) {
 		this.signNonce = signNonce;
+	}
+
+
+	public byte[] getValue() {
+		return value;
+	}
+
+
+	public void setValue(byte[] value) {
+		this.value = value;
 	}
 		
 }
