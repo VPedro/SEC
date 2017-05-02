@@ -21,8 +21,8 @@ import java.util.Map;
 public class Server {
 
 	private ServerSocket serverSocket;
-	//private Map<ArrayList<String>, String> passwords;
-	private Map<String, byte[]> newPass;
+	//FIXME estrutura q guarda a signature para cada pass recebida e garante nao repudio
+	private Map<String, List<byte[]>> newPass;
 	private Map<PublicKey, Long> nonces;
 	private List<PublicKey> registeredKeys;
 	private List<Long> usedNonces;
@@ -106,7 +106,13 @@ public class Server {
 		System.arraycopy(pubKey.getEncoded(), 0, c, 0, pubKey.getEncoded().length);
 		System.arraycopy(domain, 0, c, pubKey.getEncoded().length, domain.length);
 		System.arraycopy(username, 0, c, pubKey.getEncoded().length + domain.length, username.length);
-		newPass.put(new String(c), password);
+		//newPass.put(new String(c), password);
+		String key = new String(c);
+		if(newPass.get(key)==null){
+			List<byte[]> pass = new ArrayList<byte[]>();
+			newPass.put(key,pass);
+		}
+		newPass.get(key).add(password);
 	}
 
 	public byte[] get(PublicKey publicKey, byte[] domain, byte[] username){
@@ -115,8 +121,8 @@ public class Server {
 		System.arraycopy(pubKey.getEncoded(), 0, c, 0, pubKey.getEncoded().length);
 		System.arraycopy(domain, 0, c, pubKey.getEncoded().length, domain.length);
 		System.arraycopy(username, 0, c, pubKey.getEncoded().length + domain.length, username.length);
-
-		byte[] password_retrieved = newPass.get(new String(c));
+		List<byte[]> list = newPass.get(new String(c));
+		byte[] password_retrieved = newPass.get(new String(c)).get(list.size()-1);
 		if(password_retrieved != null){
 			return password_retrieved;
 		}else {
@@ -173,7 +179,7 @@ public class Server {
 		
 		
 		Server server = new Server(args[0]);
-		server.newPass = new HashMap<String, byte[]>();
+		server.newPass = new HashMap<String, List<byte[]>>();
 		server.nonces = new HashMap<PublicKey, Long>();
 		server.usedNonces = new ArrayList<Long>();
 		server.registeredKeys = new ArrayList<PublicKey>();

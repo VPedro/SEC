@@ -22,7 +22,7 @@ public class Library {
 	ObjectInputStream[] inObject;
 	DataOutputStream[] outData;
 	DataInputStream[] inData;
-	int numServers = 5;
+	int numServers = 3;
 
 	static PublicKey pubKey;
 	static PrivateKey privKey;
