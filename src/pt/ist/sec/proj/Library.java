@@ -188,12 +188,11 @@ public class Library {
 
 	public String retrieve_password(byte[] domain, byte[] username){
 
-		//nextNonce = getNonce();
+		nextNonce = getNonce();
 
 		byte[] hash_dom = crypto.hash_sha256(domain);
 		byte[] hash_user = crypto.hash_sha256(username);
-		//FIXME nonce
-		Message msg = createMessage("retrieve_password", hash_dom, hash_user, null, null);
+		Message msg = createMessage("retrieve_password", hash_dom, hash_user, null, nextNonce);
 		Object o = null;
 		try {
 			outObject.writeObject(msg);

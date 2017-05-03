@@ -33,7 +33,7 @@ public class Register {
 	
 	private Map<PublicKey, Long> expectedNonce;
 	private List<Long> usedNonces;
-	//private Map<PublicKey, List<Long>> replaceNonces;
+	private Map<PublicKey, List<Long>> replaceNonces;
 	
 	
 	static int numServers = 3;
@@ -68,7 +68,7 @@ public class Register {
 		Register register = new Register();
 		register.expectedNonce = new HashMap<PublicKey, Long>();
 		register.usedNonces = new ArrayList<Long>();
-		//register.replaceNonces = new HashMap<PublicKey, List<Long>>();
+		register.replaceNonces = new HashMap<PublicKey, List<Long>>();
 
 		KeyStore ks  = register.getKeyStore("olaola");
 		register.setKeys(ks,"register","olaola");
@@ -99,6 +99,10 @@ public class Register {
 	public int getRID(){
 		rid++;
 		return rid;
+	}
+	
+	public void updateReplaceNonces(PublicKey pk, List<Long> noncesList){
+		
 	}
 	
 	
