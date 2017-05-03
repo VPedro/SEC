@@ -17,15 +17,21 @@ public class RegisterReadMessage implements Serializable{
 	private byte[] domain;
 	private byte[] username;
 	private byte[] password;
+	private PublicKey clientPubKey;
 	//not used yet
 	private Long nonce;
 	private byte[] signNonce;
 	
-	public RegisterReadMessage(PublicKey pubKey, byte[] signPK, int rid, byte[] signRID) {
+	public RegisterReadMessage(PublicKey pubKey, byte[] signPK, int rid, byte[] signRID, PublicKey clientPubKey, byte[] domain, byte[] sig_domain, byte[] username, byte[] sig_username) {
 		this.pubKey = pubKey;
 		this.signPK = signPK;
 		this.rid = rid;
 		this.signRID = signRID;
+		this.clientPubKey = clientPubKey;
+		this.domain = domain;
+		this.username = username;
+		this.signDomain = sig_domain;
+		this.signUsername = sig_username;
 	}
 
 		
@@ -130,6 +136,16 @@ public class RegisterReadMessage implements Serializable{
 	}
 	public void setSignNonce(byte[] signNonce) {
 		this.signNonce = signNonce;
+	}
+
+
+	public PublicKey getClientPubKey() {
+		return clientPubKey;
+	}
+
+
+	public void setClientPubKey(PublicKey clientPubKey) {
+		this.clientPubKey = clientPubKey;
 	}
 
 

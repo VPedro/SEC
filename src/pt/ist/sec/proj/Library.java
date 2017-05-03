@@ -44,8 +44,6 @@ public class Library {
 			inObject = new ObjectInputStream(registerSocket.getInputStream());
 			outData = new DataOutputStream(registerSocket.getOutputStream());
 			inData = new DataInputStream(registerSocket.getInputStream());
-
-			System.out.println("RNDDASDA");
 			
 			if(!setKeys(keystore, alias, password))
 				return false;
@@ -73,14 +71,14 @@ public class Library {
 		try {
 			outObject.writeObject(msg);
 			resMsg = (SignedMessage)inObject.readObject();
-			System.out.println("received nonce:" );
-			System.out.println(resMsg.getSignNonce() );
+			System.out.println("=========================");
+			System.out.println(resMsg.getSignNonce());
 			System.out.println(resMsg.getPubKey());
-			System.out.println(resMsg.getNonce().toString().getBytes("UTF-8"));
-			boolean valid = crypto.signature_verify(resMsg.getSignNonce(), resMsg.getPubKey(),  resMsg.getNonce().toString().getBytes("UTF-8"));
+			System.out.println(resMsg.getNonce());
+			boolean valid = crypto.signature_verify(resMsg.getSignNonce(), resMsg.getPubKey(), resMsg.getNonce().toString().getBytes("UTF-8"));
 			if(valid ){
 				if(resMsg.getRes().equals("fail")){
-					System.out.println("failed");
+					System.out.println("Get nonce failed");
 				}else{
 					boolean validNounce = crypto.signature_verify(resMsg.getSignNonce(), resMsg.getPubKey(),  resMsg.getNonce().toString().getBytes("UTF-8"));
 					if(validNounce){
@@ -121,13 +119,9 @@ public class Library {
 		SignedMessage msg = new SignedMessage("register", pubKey, sig_pub, null, null, null, null);
 		SignedMessage resMsg = null;
 
-		System.out.println("0");
 		try {
-			System.out.println("1");
-
 			outObject.writeObject(msg);
 			resMsg = (SignedMessage)inObject.readObject();
-			System.out.println("2");
 			if(resMsg.getRes().equals("success")){
 				
 				System.out.println("Registered in server with success");
@@ -160,12 +154,13 @@ public class Library {
 		byte[] hash_dom = crypto.hash_sha256(domain);
 		byte[] hash_user = crypto.hash_sha256(username);
 		Message msg = createMessage("save_password", hash_dom, hash_user, password, nextNonce);
+		System.out.println("Sent save to register");
 		SignedMessage resMsg = null;
 		try {
 			outObject.writeObject(msg);
 			resMsg = (SignedMessage)inObject.readObject();
 			if(verbose)
-				System.out.println("received result" + resMsg.getRes());
+				System.out.println("Received result" + resMsg.getRes());
 			
 			if(resMsg.getRes().equals("register_fail")){
 				System.out.println("You are not registered");
@@ -181,7 +176,7 @@ public class Library {
 					System.out.println("Error saving your password!");
 				}
 			}else{
-				System.out.println("server signature not valid");
+				System.out.println("Server signature not valid");
 			}
 		} catch (IOException | ClassNotFoundException e) {
 			System.out.println("Could not save password!");
@@ -195,7 +190,7 @@ public class Library {
 		byte[] hash_dom = crypto.hash_sha256(domain);
 		byte[] hash_user = crypto.hash_sha256(username);
 		Message msg = createMessage("retrieve_password", hash_dom, hash_user, null, nextNonce);
-		System.out.println("sent retrieve to register");
+		System.out.println("Sent retrieve to register");
 		Object o = null;
 		try {
 			outObject.writeObject(msg);
@@ -208,32 +203,32 @@ public class Library {
 				System.out.println("You are not registered!");
 				return "fail";
 			}else if(((SignedMessage) o).getRes().equals("invalid message")){
-				System.out.println("the message was invalid");
+				System.out.println("The message is invalid");
 				return "fail";
 			}
 		}
 
-		System.out.println("recebi Message (supostamente pass)...");
 		Message m = (Message)o;
+		if(m == null){
+			return null;
+		}
 		boolean ver_p = false;
 		if(m.getPassword() != null) {
 			ver_p = crypto.signature_verify(m.getSig_password(), m.getPublicKey(), m.getPassword());
 		}
+		else return null;
 		if(ver_p){ 	
 
 			byte[] b = crypto.decrypt(m.getPassword(), privKey);
 			if (b == null){return null;}
 			try {
 				System.out.println(new String(b, "UTF-8"));
-				//return new String(b, "UTF-8");
+				return new String(b, "UTF-8");
 			} catch (UnsupportedEncodingException e) {
-				if(verbose) {
-					System.out.println("Password store on server: " );
 					e.printStackTrace();
-				}
 			}
 		}else{
-			System.out.println("password signature not valid");
+			System.out.println("Password signature not valid");
 		}
 
 		return null;

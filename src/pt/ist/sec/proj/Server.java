@@ -129,6 +129,9 @@ public class Server {
 		System.arraycopy(domain, 0, c, pubKey.getEncoded().length, domain.length);
 		System.arraycopy(username, 0, c, pubKey.getEncoded().length + domain.length, username.length);
 		List<byte[]> list = newPass.get(new String(c));
+		if(list == null){
+			return null;
+		}
 		byte[] password_retrieved = newPass.get(new String(c)).get(list.size()-1);
 		if(password_retrieved != null){
 			return password_retrieved;
@@ -158,7 +161,7 @@ public class Server {
 	public static ServerSocket create(int min, int max) throws IOException {
 	    for (port=min; port <= max; port++) {
 	        try {
-	        	System.out.println("port:" + port);
+	        	System.out.println("Port:" + port);
 	            return new ServerSocket(port);
 	        } catch (IOException e) {
 	            continue; // try next port
@@ -166,7 +169,7 @@ public class Server {
 	    }
 
 	    // if the program gets here, no port in the range was found
-	    throw new IOException("no free port found");
+	    throw new IOException("No free port found");
 	}
 
 

@@ -60,14 +60,11 @@ public class RegisterThread extends Thread {
 	}
 
 	public void run() {
-		System.out.println("iniciei register thread");
-
 		crypto = new Crypto();
 		Object input;
 		try {
 			objIn = new ObjectInputStream(librarysocket.getInputStream());
 			objOut = new ObjectOutputStream(librarysocket.getOutputStream());
-			System.out.println("streams ok");
 			
 			threads = new ServerRequestThread[numServers];
 			
@@ -114,7 +111,6 @@ public class RegisterThread extends Thread {
 							byte[] sign_Nonce = crypto.signature_generate(newNonce.toString().getBytes("UTF-8"), privKey);
 							resSignedMsg = new SignedMessage("nonce",pubKey,sign_pub, "success", null, newNonce, sign_Nonce);
 							if(verbose){
-								System.out.println("GONNA SEND MY N0NCE");
 								System.out.println(resSignedMsg.getSignNonce());
 							}
 							
@@ -180,10 +176,10 @@ public class RegisterThread extends Thread {
 						
 						int tempRID = register.getRID();
 						byte[] signRID = crypto.signature_generate(intToBytes(tempRID), privKey);
-						RegisterReadMessage msg = new RegisterReadMessage(pubKey, sign_pub, tempRID, signRID);
+						RegisterReadMessage msg = new RegisterReadMessage(pubKey, sign_pub, tempRID, signRID, m.getPublicKey(), m.getDomain(), m.getSig_domain(), m.getUsername(), m.getSig_username());
 						
 						for(int i = initialServerPort ; i<initialServerPort+numServers; i++){
-							System.out.println("retrieve pass to server :" + i);
+							System.out.println("Retrieve pass to server: " + i);
 							int id = i-initialServerPort;
 							threads[id] = new ServerRequestThread(id,this,msg,i);
 							threads[id].start();
@@ -203,22 +199,34 @@ public class RegisterThread extends Thread {
 	
 	public void response(AckMessage msg){
 		count++;
-		System.out.println("count:" + count);
 		if(count > (numServers/2)){
-			System.out.println("thread sends to lybrary saved with success");
 			sendSignedMessage("save_password", pubKey, sign_pub, "success", null);
 			count = 0;
 		}
 	}
 	
 	public void response(ReadResponseMessage msg){
+		if(msg == null){
+			try {
+				objOut.writeObject(null);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			return;
+		}
 		String end = endThread(new String(msg.getPassword()));
 		if(end == null){
 			return;
 		}
-		System.out.println("thread sends to lybrary maiority: " + new String(msg.getPassword()));
 		Message m2 = new Message(null, pubKey, null, null, crypto.signature_generate(msg.getPassword(), privKey), null, null, msg.getPassword(), null, null);
-		sendSignedMessage("retrieve_password", pubKey, sign_pub, end, null);
+		//sendSignedMessage("retrieve_password", pubKey, sign_pub, end, null);
+		try {
+			objOut.writeObject(m2);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	
 	public void response(Message msg){
@@ -229,7 +237,6 @@ public class RegisterThread extends Thread {
 				if(end == null){
 					return;
 				}
-				System.out.println("thread sends to lybrary " + new String(msg.getPassword()));
 				objOut.writeObject(msg);
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
@@ -241,13 +248,12 @@ public class RegisterThread extends Thread {
 	
 
 	public void response(SignedMessage msg){
-		
-		System.out.println("response from serverRequestThread: " + msg.getRes());
+		System.out.println("Response from serverRequestThread: " + msg.getRes());
 
 		if(msg.getFunc().equals("invalid")){
 			try {
 				//todo ver se maioria deu invalid
-				System.out.println("invalid msg");
+				System.out.println("Invalid message");
 				objOut.writeObject(msg);
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
@@ -262,8 +268,6 @@ public class RegisterThread extends Thread {
 				if(end == null){
 					return;
 				}
-				
-				System.out.println("thread sends to lybrary " + msg.getRes());
 				objOut.writeObject(msg);
 				
 				
@@ -285,8 +289,6 @@ public class RegisterThread extends Thread {
 				if(end == null){
 					return;
 				}
-				
-				System.out.println("thread sends to lybrary: " + msg.getRes());
 				objOut.writeObject(msg);
 				
 				
@@ -302,7 +304,6 @@ public class RegisterThread extends Thread {
 				if(end == null){
 					return;
 				}
-				System.out.println("thread sends to lybrary: " + msg.getRes());
 				objOut.writeObject(msg);				
 			} catch (IOException e) {
 				e.printStackTrace();
@@ -357,7 +358,7 @@ public class RegisterThread extends Thread {
 		if(response!=null){
 			return response;
 		}
-		System.out.println("endthread result:" + response);
+		System.out.println("Endthread result:" + response);
 		return null;
 	}
 	
@@ -385,7 +386,6 @@ public class RegisterThread extends Thread {
 	}
 
 	public boolean saveNounce(long nonce){
-		System.out.println("saved nonce");
 		return true;
 	}
 }

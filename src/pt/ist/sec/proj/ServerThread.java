@@ -115,9 +115,6 @@ public class ServerThread extends Thread {
 					RegisterMessage rcvdMsg = (RegisterMessage)input;
 					if(rcvdMsg.getFunc().equals("save_password")){
 						if(validMessageSignatures(rcvdMsg,true, true,true,true,true)){
-							if(verbose) {
-								System.out.println("Aqui" );
-							}
 							//Long n_compare = server.getNonces().get(m.getPublicKey());
 							//FIXME compare nonces
 							/*if((long)n_compare != ((long)m.getNonce())){
@@ -141,13 +138,17 @@ public class ServerThread extends Thread {
 					//TODO vcerify
 					RegisterReadMessage rcvdMsg = (RegisterReadMessage)input;
 					
-					byte[] pass = server.get(rcvdMsg.getPubKey(), rcvdMsg.getDomain(), rcvdMsg.getUsername());
+					byte[] pass = server.get(rcvdMsg.getClientPubKey(), rcvdMsg.getDomain(), rcvdMsg.getUsername());
 					byte[] signPass = crypto.signature_generate(pass, privKey);
 					byte[] signRID = crypto.signature_generate(intToBytes(rcvdMsg.getRID()), privKey);
 					
-					//FIXME WTS
-					ReadResponseMessage m2 = new ReadResponseMessage(pubKey, sign_pub, rcvdMsg.getRID(), signRID, 1, null, pass, signPass);
-					objOut.writeObject(m2);
+					if(pass == null){
+						objOut.writeObject(null);
+					}
+					else {//FIXME WTS
+						ReadResponseMessage m2 = new ReadResponseMessage(pubKey, sign_pub, rcvdMsg.getRID(), signRID, 1, null, pass, signPass);
+						objOut.writeObject(m2);
+					}
 				}
 				else if(input instanceof SignedMessage) {
 					SignedMessage m = (SignedMessage)input;
@@ -172,13 +173,6 @@ public class ServerThread extends Thread {
 							}
 							byte[] sign_Nonce = crypto.signature_generate(Nonce.toString().getBytes("UTF-8"), privKey);
 							resMsg = new SignedMessage("nonce",pubKey,sign_pub, "success", null, Nonce, sign_Nonce);
-							if(verbose){
-								System.out.println("GONNA SEND MY N0NCE");
-							
-								System.out.println(resMsg.getSignNonce());
-								System.out.println(resMsg.getPubKey());
-								System.out.println(resMsg.getNonce());
-							}
 							
 							try {
 								objOut.writeObject(resMsg);
