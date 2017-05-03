@@ -19,7 +19,7 @@ import java.util.Map;
 
 
 public class Server {
-	
+
 	//TODO func update nonce 
 
 	private ServerSocket serverSocket;
@@ -31,7 +31,7 @@ public class Server {
 	boolean verbose = true;
 	static int port = 1026;
 	static int ServerID;
-	
+
 	private Map<PublicKey, Integer> PubKeyTS;
 	private Map<Integer, byte[]> TSValues;
 	private Map<Integer, byte[]> TSSigns;
@@ -86,11 +86,6 @@ public class Server {
 		return ks;
 	}
 
-	/** Requirements:
-	 *	Non-Repudiation of any action that alters passwords
-	 *  Confidentiality and Integrity of domains, usernames and passwords 
-	 * @return 
-	 **/
 
 	public SignedMessage register(SignedMessage msg){ 
 		//Verify if publicKey is already registered
@@ -106,6 +101,7 @@ public class Server {
 			return msg;
 		}
 	}
+
 
 	public void	put(PublicKey publicKey, byte[] domain, byte[] username, byte[] password){ 
 		System.out.println("Server executed: Save_password");
@@ -124,7 +120,7 @@ public class Server {
 
 	public byte[] get(PublicKey publicKey, byte[] domain, byte[] username){
 		System.out.println("Server executed: Retrieve_password");
-		
+
 		byte[] c = new byte[publicKey.getEncoded().length + domain.length + username.length];
 		System.arraycopy(publicKey.getEncoded(), 0, c, 0, publicKey.getEncoded().length);
 		System.arraycopy(domain, 0, c, publicKey.getEncoded().length, domain.length);
@@ -155,7 +151,7 @@ public class Server {
 			}
 			usedNonces.add(res);
 			//enviar para a library que vai dar update a todos os servers (used nounces)
-			
+
 		} catch (NoSuchAlgorithmException e) {
 			e.printStackTrace();
 			return 0;
@@ -164,31 +160,30 @@ public class Server {
 	}
 
 	public static ServerSocket create(int min, int max) throws IOException {
-	    for (port=min; port <= max; port++) {
-	        try {
-	        	System.out.println("Port:" + port);
-	            return new ServerSocket(port);
-	        } catch (IOException e) {
-	            continue; // try next port
-	        }
-	    }
-
-	    // if the program gets here, no port in the range was found
-	    throw new IOException("No free port found");
+		for (port=min; port <= max; port++) {
+			try {
+				System.out.println("Port:" + port);
+				return new ServerSocket(port);
+			} catch (IOException e) {
+				continue; // try next port
+			}
+		}
+		// if the program gets here, no port in the range was found
+		throw new IOException("No free port found");
 	}
 
 
-	
+
 
 	public static void main(String args[]){
-		
-		
+
+
 		Server server = new Server(args[0]);
 		server.newPass = new HashMap<String, List<byte[]>>();
 		server.nonces = new HashMap<PublicKey, Long>();
 		server.usedNonces = new ArrayList<Long>();
 		server.registeredKeys = new ArrayList<PublicKey>();
-		
+
 		server.PubKeyTS =  new HashMap<PublicKey, Integer>();
 		server.TSValues = new HashMap<Integer, byte[]>();
 		server.TSSigns = new HashMap<Integer, byte[]>();
@@ -198,7 +193,7 @@ public class Server {
 
 		System.out.println("===== Server Started =====");
 		Socket serverClient = null;
-	
+
 		try {
 			server.serverSocket = create(port, port+5);			
 			while(true){
@@ -206,15 +201,12 @@ public class Server {
 				System.out.println("Started thread on port " + port);
 				new ServerThread(serverClient, server).start();
 			}
-			//server.serverSocket.close();
-
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
-	
+
 	public void updateTS(PublicKey pk, int ts, byte[]value, byte[] sign ){
-		
 		Integer savedTS = PubKeyTS.get(pk);
 		if(savedTS == null){
 			PubKeyTS.put(pk, ts);
@@ -225,7 +217,7 @@ public class Server {
 			TSSigns.put(ts, sign);
 		}
 	}
-	
+
 	PublicKey getPubKey() {
 		return pubKey;
 	}

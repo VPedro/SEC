@@ -16,22 +16,22 @@ import javax.crypto.NoSuchPaddingException;
 public class ServerRequestThread extends Thread {
 
 	private RegisterThread register;
-	
+
 	private ObjectInputStream serverInputStream;
 	private ObjectOutputStream serverOutputStream;
-	
+
 	private Socket server;
-	
+
 	private int serverPort;
 	private Message rcvMessage;
 	private RegisterReadMessage rcvRegisterReadMessage;
 	private RegisterMessage rcvRegisterMessage;
 	private SignedMessage rcvSignedMessage;
 	private AckMessage respMsg;
-	
+
 	private int myID;
 
-	
+
 	ServerRequestThread(int id, RegisterThread register, RegisterReadMessage msg, int port) {
 		this.myID = id;
 		this.register = register;
@@ -56,20 +56,19 @@ public class ServerRequestThread extends Thread {
 		this.serverPort = port;
 		this.rcvMessage = msg;
 	}
-	
+
 	public void run() {
 		Object responseMsg;
-		
+
 		try {
 			server = new Socket("localhost",serverPort);
 		} catch (IOException e1) {
 			//e1.printStackTrace();
-			
 		}
 		try {
 			serverOutputStream = new ObjectOutputStream(server.getOutputStream());
 			serverInputStream = new ObjectInputStream(server.getInputStream());
-			
+
 			if(rcvMessage != null){
 				serverOutputStream.writeObject(rcvMessage);
 			}else if(rcvRegisterReadMessage != null){
@@ -80,7 +79,7 @@ public class ServerRequestThread extends Thread {
 				serverOutputStream.writeObject(rcvSignedMessage);
 			}
 			responseMsg = serverInputStream.readObject();
-			
+
 			if(responseMsg instanceof AckMessage){
 				register.response((AckMessage) responseMsg);
 			}else if(responseMsg instanceof SignedMessage){
@@ -91,18 +90,8 @@ public class ServerRequestThread extends Thread {
 				ReadResponseMessage r = null;
 				register.response(r);
 			}
-			
-			
-			
 		} catch (IOException | ClassNotFoundException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		//resMsg = new SignedMessage(null,pubKey,sign_pub ,"register_fail", null, null, null);
-		
-			//resMsg = new SignedMessage(null,pubKey,sign_pub ,"register_fail", null, null, null);
-		//	objOut.writeObject(resMsg);
-		
 	}
-	
 }

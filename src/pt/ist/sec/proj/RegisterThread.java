@@ -25,8 +25,8 @@ public class RegisterThread extends Thread {
 	private int regID;
 	private String[] readList;
 
-	
-	static boolean verbose = true;
+
+	static boolean verbose = false;
 	static int initialServerPort = 1026;
 	static int numServers;
 
@@ -41,9 +41,9 @@ public class RegisterThread extends Thread {
 	String[] resAnswers;
 	int count;
 	static boolean finished;
-	
+
 	Crypto crypto;
-	
+
 	/*private Socket[] clients;
 	ObjectOutputStream[] outObject;
 	ObjectInputStream[] inObject;
@@ -65,9 +65,9 @@ public class RegisterThread extends Thread {
 		try {
 			objIn = new ObjectInputStream(librarysocket.getInputStream());
 			objOut = new ObjectOutputStream(librarysocket.getOutputStream());
-			
+
 			threads = new ServerRequestThread[numServers];
-			
+
 			pubKey = register.getPubKey();
 			privKey = register.getPrivKey();
 			sign_pub = crypto.signature_generate(pubKey.getEncoded(), privKey);
@@ -76,8 +76,8 @@ public class RegisterThread extends Thread {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
-		
-		
+
+
 
 		boolean connectionOpen = true;
 		while (connectionOpen) {
@@ -86,9 +86,9 @@ public class RegisterThread extends Thread {
 				resAnswers = new String[numServers];
 				//FIXME fazer array read/acks/ outro qlq?
 				count = 0;
-								
+
 				finished=false;
-				
+
 				SignedMessage resSignedMsg;
 				if (input instanceof SignedMessage) {
 
@@ -105,7 +105,7 @@ public class RegisterThread extends Thread {
 						register.setNonce(m.getPubKey());
 						Long newNonce = register.getNonce(m.getPubKey());
 						if(verbose) {
-						System.out.println("Genereated nonce: " + newNonce);
+							System.out.println("Genereated nonce: " + newNonce);
 						}
 						if(newNonce != 0){
 							byte[] sign_Nonce = crypto.signature_generate(newNonce.toString().getBytes("UTF-8"), privKey);
@@ -113,14 +113,14 @@ public class RegisterThread extends Thread {
 							if(verbose){
 								System.out.println(resSignedMsg.getSignNonce());
 							}
-							
+
 							//reply our nonce to library
 							try {
 								objOut.writeObject(resSignedMsg);
 							} catch (IOException e) {
 								System.out.println("Error sending SignedMessage ");
 							}
-							
+
 						}else{
 							sendSignedMessage("nonce", pubKey, sign_pub, "fail", null);
 						}
@@ -128,7 +128,7 @@ public class RegisterThread extends Thread {
 				}
 				else if(input instanceof Message) {
 					Message m = (Message)input;
-					
+
 					//fazer as nossa signs
 					byte[] signDom = crypto.signature_generate(m.getDomain(), privKey);
 					byte[] signUser = crypto.signature_generate(m.getUsername(), privKey);
@@ -136,22 +136,13 @@ public class RegisterThread extends Thread {
 					if(m.getFunctionName().equals("save_password")){	
 						if(validMessageSignatures(m,true,true,true,true)){
 							if(verbose) {
-								
 								System.out.println("Expected nonce: " + register.getNonce(m.getPublicKey()));
 								System.out.println("Nonce received from library: " + m.getNonce());
-								
 							}
-							/*Long n_compare = register.getNonce(m.getPublicKey());
-							if((long)n_compare != ((long)m.getNonce())){
-								System.out.println("Different Nonce, reject"); 
-								sendSignedMessage("invalid", pubKey, sign_pub, "invalid message", null);
-								continue; 
-							}*/
-							//System.out.println("DUP Signature verified successfully! (no yet...)");
 							int tempWTS = register.getWTS();
 							byte[] signWTS = crypto.signature_generate(intToBytes(tempWTS), privKey);
 							byte[] signPass = crypto.signature_generate(m.getPassword(), privKey);
-							
+
 							RegisterMessage msg = new RegisterMessage("save_password", pubKey, sign_pub, tempWTS, signWTS, 
 									m.getDomain(),signDom, m.getUsername(), signUser, m.getPassword(), signPass,null, null, m.getPublicKey());
 
@@ -161,7 +152,7 @@ public class RegisterThread extends Thread {
 								int id = i-initialServerPort;
 								threads[id] = new ServerRequestThread(id,this,msg,i);
 								threads[id].start();
-								
+
 							}
 						} else {
 							System.out.println("Signature not valid!");
@@ -169,26 +160,22 @@ public class RegisterThread extends Thread {
 							//sendRegisterMessage("save_password", pubKey, sign_pub, "fail", null);
 						}					
 					}
-					
+
 					else if(m.getFunctionName().equals("retrieve_password")){	
-						
+
 						readList = new String[numServers];
-						
+
 						int tempRID = register.getRID();
 						byte[] signRID = crypto.signature_generate(intToBytes(tempRID), privKey);
 						RegisterReadMessage msg = new RegisterReadMessage(pubKey, sign_pub, tempRID, signRID, m.getPublicKey(), m.getDomain(), m.getSig_domain(), m.getUsername(), m.getSig_username());
-						
+
 						for(int i = initialServerPort ; i<initialServerPort+numServers; i++){
 							System.out.println("Retrieve pass to server: " + i);
 							int id = i-initialServerPort;
 							threads[id] = new ServerRequestThread(id,this,msg,i);
 							threads[id].start();
-						}	
-						
-						
+						}							
 					}
-
-
 				}
 			} catch (ClassNotFoundException | IOException e) {
 				System.out.println("Thread killed");
@@ -196,30 +183,16 @@ public class RegisterThread extends Thread {
 			}
 		}
 	}
-	
+
 	public void response(AckMessage msg){
-		System.out.println("------new AckMessage response");
 		count++;
 		if(count > (numServers/2)){
 			sendSignedMessage("save_password", pubKey, sign_pub, "success", null);
 			count = 0;
 		}
 	}
-	
+
 	public void response(ReadResponseMessage msg){
-		System.out.println("------new ReadResponseMessage response");
-		
-		//FIXME nao e usado pq qnd nao tem pass vem signedMessage 
-		if(msg == null){
-			try {
-				System.out.println("mandei null ao library");
-				objOut.writeObject(null);
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			return;
-		}
 		String end = endThread(new String(msg.getPassword()));
 		if(end == null){
 			return;
@@ -233,16 +206,14 @@ public class RegisterThread extends Thread {
 			e.printStackTrace();
 		}
 	}
-	
+
 
 	//FIXME so dar erro uma vez caso msg.getRes for maioria
 	public void response(SignedMessage msg){
-		System.out.println("------new SignedMessage response");
 		System.out.println("Response from serverRequestThread: " + msg.getRes());
 
 		if(msg.getFunc().equals("invalid")){
 			try {
-
 				System.out.println("Invalid message");
 				String end = endThread("invalid");
 				if(end == null){
@@ -254,40 +225,35 @@ public class RegisterThread extends Thread {
 				e.printStackTrace();
 			}
 		}
-		
+
 		else if(msg.getFunc().equals("register")){
-			
+
 			try {
 				String end = endThread(msg.getRes());
 				if(end == null){
 					return;
 				}
 				objOut.writeObject(msg);
-				
-				
+
+
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
-		
+
 		else if(msg.getFunc().equals("nonce")){
 			register.setNonce(msg.getPubKey());
-			
 		}
-		
+
 		else if(msg.getFunc().equals("save_password")){
-			
 			try {
 				String end = endThread(msg.getRes());
 				if(end == null){
 					return;
 				}
 				objOut.writeObject(msg);
-				
-				
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
@@ -295,7 +261,6 @@ public class RegisterThread extends Thread {
 		else if(msg.getFunc().equals("retrieve_password")){
 			//
 			if(msg.getRes().equals("no password")){
-				System.out.println("nao recebi pass");
 				try {
 					String end = endThread(msg.getRes());
 					if(end == null){
@@ -317,7 +282,7 @@ public class RegisterThread extends Thread {
 			}
 		}
 	}
-	
+
 	public void sendSignedMessage(String func, PublicKey pubKey, byte[] sign, String res, byte[] value){
 		SignedMessage msg = new SignedMessage(func,pubKey, sign, res, value, null, null);
 		try {
@@ -326,12 +291,12 @@ public class RegisterThread extends Thread {
 			System.out.println("Error sending SignedMessage ");
 		}
 	}
-	
-	
+
+
 	public boolean validMessageSignatures(Message m, boolean dom, boolean user, boolean pass, boolean nonce){
 		boolean valid1,valid2,valid3,valid4;
 		valid1=valid2=valid3=valid4= true;
-		
+
 		if(dom){
 			valid1 = crypto.signature_verify(m.getSig_domain(), m.getPublicKey(), m.getDomain());
 		}
@@ -342,57 +307,56 @@ public class RegisterThread extends Thread {
 			valid3 = crypto.signature_verify(m.getSig_password(), m.getPublicKey(), m.getPassword());
 		}
 		if(nonce){
+			//TODO
 			//valid4 = crypto.signature_verify(m.getSig_nonce(), m.getPublicKey(), m.getNonce().toString().getBytes());
 			valid4=true;
 		}
-		//FIXME
-		
 		return valid1 & valid2 & valid3 & valid4 ;
 	}
-	
+
 	public byte[] intToBytes( final int i ) {
-	    ByteBuffer bb = ByteBuffer.allocate(4); 
-	    bb.putInt(i); 
-	    return bb.array();
+		ByteBuffer bb = ByteBuffer.allocate(4); 
+		bb.putInt(i); 
+		return bb.array();
 	}
 
 	private String endThread(String res) {
-		// TODO Auto-generated method stub
 		if(finished)
 			return null;
-		
+
 		resAnswers[count] = res;
 		count++;
-		
+
 		String response = majority(resAnswers);
 		if(response!=null){
 			return response;
 		}
-		System.out.println("Endthread result:" + response);
+		if(verbose) {
+			System.out.println("Endthread result:" + response);
+		}
 		return null;
 	}
-	
+
 	public static String majority(String[] answers) {
-	    Map<String, Integer> count = new HashMap<String, Integer>();
-	    for (String s : answers) {
-	        if (count.containsKey(s)) {
-	        	count.put(s, count.get(s) + 1);
-	        } else {
-	        	count.put(s, 1);
-	        }
-	    }
-	    String majority = null;
-	    for (String key : count.keySet()) {
-	        if (count.get(key) > numServers / 2) {
-	        	majority = key;
-	        }
-	    }
-	    
-	    if(majority!=null && !finished){
-	    	finished=true;
-	    	return majority;
-	    }
-	    return null;
+		Map<String, Integer> count = new HashMap<String, Integer>();
+		for (String s : answers) {
+			if (count.containsKey(s)) {
+				count.put(s, count.get(s) + 1);
+			} else {
+				count.put(s, 1);
+			}
+		}
+		String majority = null;
+		for (String key : count.keySet()) {
+			if (count.get(key) > numServers / 2) {
+				majority = key;
+			}
+		}
+		if(majority!=null && !finished){
+			finished=true;
+			return majority;
+		}
+		return null;
 	}
 
 	public boolean saveNounce(long nonce){

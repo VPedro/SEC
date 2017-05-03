@@ -25,7 +25,7 @@ public class Library {
 	static PrivateKey privKey;
 
 	private Long nextNonce;
-	boolean verbose = true;
+	boolean verbose = false;
 
 	Crypto crypto;
 
@@ -44,7 +44,7 @@ public class Library {
 			inObject = new ObjectInputStream(registerSocket.getInputStream());
 			outData = new DataOutputStream(registerSocket.getOutputStream());
 			inData = new DataInputStream(registerSocket.getInputStream());
-			
+
 			if(!setKeys(keystore, alias, password))
 				return false;
 
@@ -71,10 +71,6 @@ public class Library {
 		try {
 			outObject.writeObject(msg);
 			resMsg = (SignedMessage)inObject.readObject();
-			System.out.println("=========================");
-			System.out.println(resMsg.getSignNonce());
-			System.out.println(resMsg.getPubKey());
-			System.out.println(resMsg.getNonce());
 			boolean valid = crypto.signature_verify(resMsg.getSignNonce(), resMsg.getPubKey(), resMsg.getNonce().toString().getBytes("UTF-8"));
 			if(valid ){
 				if(resMsg.getRes().equals("fail")){
@@ -123,7 +119,6 @@ public class Library {
 			outObject.writeObject(msg);
 			resMsg = (SignedMessage)inObject.readObject();
 			if(resMsg.getRes().equals("success")){
-				
 				System.out.println("Registered in server with success");
 			}else if(resMsg.getRes().equals("used key")){
 				System.out.println("You are already registered");
@@ -149,7 +144,7 @@ public class Library {
 
 	public void save_password(byte[] domain, byte[] username, byte[] password) throws IOException {
 
-		
+
 		nextNonce = getNonce();
 		byte[] hash_dom = crypto.hash_sha256(domain);
 		byte[] hash_user = crypto.hash_sha256(username);
@@ -161,10 +156,9 @@ public class Library {
 			resMsg = (SignedMessage)inObject.readObject();
 			if(verbose)
 				System.out.println("Received result" + resMsg.getRes());
-			
+
 			if(resMsg.getRes().equals("register_fail")){
 				System.out.println("You are not registered");
-				//return;
 			}
 
 			boolean valid = crypto.signature_verify(resMsg.getSign(), resMsg.getPubKey(), resMsg.getPubKey().getEncoded());
@@ -209,8 +203,8 @@ public class Library {
 				System.out.println("No password found");
 				return "fail";
 			}
-		}else{
-
+		}
+		else{
 			Message m = (Message)o;
 			if(m == null){
 				return null;
@@ -221,40 +215,24 @@ public class Library {
 			}
 			else return null;
 			if(ver_p){ 	
-	
+
 				byte[] b = crypto.decrypt(m.getPassword(), privKey);
 				if (b == null){return null;}
 				try {
-					System.out.println(new String(b, "UTF-8"));
 					return new String(b, "UTF-8");
 				} catch (UnsupportedEncodingException e) {
-						e.printStackTrace();
+					e.printStackTrace();
 				}
 			}else{
 				System.out.println("Password signature not valid");
 			}
 		}
-
 		return null;
 	}
 
 
 	public void close(){
-		//TODO apagar do map pubkey, nonce
-		
-		/*nextNonce = getNonce();
-		//FIXME falta enviar o nonce e verificar do lado do server
 
-		byte[] sig_pub = crypto.signature_generate(pubKey.getEncoded(), privKey);
-		sendSignedMessage("close", pubKey, sig_pub, null, null);
-		try {
-			SignedMessage resMsg = (SignedMessage)inObject.readObject();
-			if(verbose) {
-				System.out.println("Result from server: " + resMsg.getRes());
-			}
-		} catch (IOException | ClassNotFoundException e) {
-			System.out.println("could not close in server");
-		}*/
 	}
 
 	public void sendSignedMessage(String func, PublicKey pubKey, byte[] sign, Long nonce, byte[] signNonce){
@@ -265,6 +243,6 @@ public class Library {
 			System.out.println("Error sending SignedMessage");
 		}
 	}
-	
-	
+
+
 }

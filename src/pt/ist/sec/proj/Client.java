@@ -6,16 +6,14 @@ import java.io.IOException;
 import java.net.SocketException;
 import java.security.*;
 import java.security.cert.CertificateException;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Scanner;
 
 public class Client {
-	
+
 	Library testLibrary;
 	KeyStore ks = null;
 	boolean initiated = false;
-	
+
 	public void menu(){
 		System.out.println(" ");
 		System.out.println("\t1 - Init");
@@ -56,15 +54,15 @@ public class Client {
 		}
 		return ks;
 	}
-	
-	
-	
+
+
+
 
 	public static void main(String args[]){
-		
+
 		Client c = new Client();
 		Library l = new Library();		
-		
+
 		Scanner s = new Scanner(System.in);
 		int option = 0;
 		boolean initiated = false;
@@ -98,7 +96,7 @@ public class Client {
 					System.err.println("2 parameters expected!");
 					continue;
 				}
-				
+
 				KeyStore ks = c.getKeyStore(spl[1]);
 				if(ks==null){
 					System.err.println("Login invalid, try again!");
@@ -107,7 +105,7 @@ public class Client {
 				if(l.init(ks, spl[0], spl[1]))
 					initiated =true;
 				break;
-			//REGISTER
+				//REGISTER
 			case 2:
 				if(!initiated){
 					System.err.println("You need to call init in order to contact server");
@@ -115,7 +113,7 @@ public class Client {
 				}
 				l.register_user();
 				break;
-			//SAVE PASSWORD
+				//SAVE PASSWORD
 			case 3:
 				if(!initiated){
 					System.err.println("You need to call init in order to contact server");
@@ -139,7 +137,7 @@ public class Client {
 				}
 
 				break;
-			//RETRIEVE PASSWORD
+				//RETRIEVE PASSWORD
 			case 4:
 				if(!initiated){
 					System.err.println("You need to call init in order to contact server");
@@ -164,7 +162,7 @@ public class Client {
 					System.out.println("Password: " + pass);
 				}
 				break;
-			//CLOSE
+				//CLOSE
 			case 5:
 				if(!initiated){
 					System.err.println("Exiting");
@@ -181,7 +179,7 @@ public class Client {
 		}
 		s.close();
 	}
-	
+
 	public String runFunction(String fun, String var1, String var2){
 		switch (fun){
 		case "init":
@@ -199,7 +197,7 @@ public class Client {
 			return "invalid function";
 		}
 	}
-	
+
 	public void createTestLibrary(){
 		testLibrary = new Library();
 	}
