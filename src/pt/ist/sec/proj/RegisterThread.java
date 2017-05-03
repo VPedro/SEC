@@ -102,7 +102,15 @@ public class RegisterThread extends Thread {
 							System.out.println("save pass to server :" + i);
 							new ServerRequestThread(this,m,i).start();
 						}						
-					}	
+					}
+					
+					else if(m.getFunctionName().equals("retrieve_password")){	
+						
+						for(int i = initialServerPort ; i<initialServerPort+numServers; i++){
+							System.out.println("retrieve pass to server :" + i);
+							new ServerRequestThread(this,m,i).start();
+						}						
+					}
 
 
 				}
@@ -113,6 +121,24 @@ public class RegisterThread extends Thread {
 		}
 	}
 	
+	public void response(Message msg){
+		if(msg.getFunctionName().equals("retrieve_password")){
+			try {
+				
+				String end = endThread(new String(msg.getPassword()));
+				if(end == null){
+					return;
+				}
+				
+				System.out.println("thread sends to lybrary " + new String(msg.getPassword()));
+				objOut.writeObject(msg);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		
+	}
 	
 
 	public void response(SignedMessage msg){
@@ -167,6 +193,25 @@ public class RegisterThread extends Thread {
 				e.printStackTrace();
 			}
 		}
+		
+		else if(msg.getFunc().equals("save_password")){
+			
+			try {
+				String end = endThread(msg.getRes());
+				if(end == null){
+					return;
+				}
+				
+				System.out.println("thread sends to lybrary: " + msg.getRes());
+				objOut.writeObject(msg);
+				
+				
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		
 
 	}
 	

@@ -40,7 +40,7 @@ public class ServerRequestThread extends Thread {
 	
 	public void run() {
 		System.out.println("FIZ CENAS");
-		SignedMessage responseMsg;
+		Object responseMsg;
 		
 		try {
 			server = new Socket("localhost",serverPort);
@@ -49,7 +49,6 @@ public class ServerRequestThread extends Thread {
 			
 		}
 		try {
-			System.out.println("aqui");
 			serverOutputStream = new ObjectOutputStream(server.getOutputStream());
 			serverInputStream = new ObjectInputStream(server.getInputStream());
 			
@@ -60,8 +59,13 @@ public class ServerRequestThread extends Thread {
 				serverOutputStream.writeObject(rcvSignedMessage);
 			}
 			
-			responseMsg = (SignedMessage) serverInputStream.readObject();
-			register.response(responseMsg);
+			responseMsg = serverInputStream.readObject();
+			
+			if(responseMsg instanceof SignedMessage)
+				register.response((SignedMessage) responseMsg);
+			else if(responseMsg instanceof Message)
+				register.response((Message) responseMsg);
+			
 			
 		} catch (IOException | ClassNotFoundException e) {
 			// TODO Auto-generated catch block

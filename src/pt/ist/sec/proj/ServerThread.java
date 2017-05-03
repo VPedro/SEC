@@ -50,8 +50,11 @@ public class ServerThread extends Thread {
 			valid3 = crypto.signature_verify(m.getSig_password(), m.getPublicKey(), m.getPassword());
 		}
 		if(nonce){
-			valid4 = crypto.signature_verify(m.getSig_nonce(), m.getPublicKey(), m.getNonce().toString().getBytes());
+			//valid4 = crypto.signature_verify(m.getSig_nonce(), m.getPublicKey(), m.getNonce().toString().getBytes());
+			valid4=true;
 		}
+		//FIXME
+		
 		return valid1 & valid2 & valid3 & valid4 ;
 	}
 
@@ -89,12 +92,13 @@ public class ServerThread extends Thread {
 								System.out.println("Nonce received by server: " + m.getNonce());
 							}
 							Long n_compare = server.getNonces().get(m.getPublicKey());
-							if((long)n_compare != ((long)m.getNonce())){
+							//FIXME compare nonces
+							/*if((long)n_compare != ((long)m.getNonce())){
 								System.out.println("Different Nonce, reject"); 
 								sendSignedMessage("invalid", pubKey, sign_pub, "invalid message", null);
 								continue; 
-							}
-							System.out.println("DUP Signature verified successfully!");
+							}*/
+							System.out.println("DUP Signature verified successfully! (no yet...)");
 							server.put(m.getPublicKey(), m.getDomain(), m.getUsername(), m.getPassword());
 							sendSignedMessage("save_password", pubKey, sign_pub, "success", m.getPassword());
 						} else {
@@ -108,12 +112,13 @@ public class ServerThread extends Thread {
 							if(verbose) {
 								System.out.println("Compare " + n_compare + " " + m.getNonce());
 							}
-							if((long)n_compare != (long)m.getNonce()){ 
+							//FIXME
+							/*if((long)n_compare != (long)m.getNonce()){ 
 								System.out.println("Repeated Nonce, possible replay attack");
 								//TODO
 								sendSignedMessage("invalid", pubKey, sign_pub, "invalid message", null);
-							}
-							System.out.println("Signature verified successfully!");
+							}*/
+							System.out.println("Signature verified successfully! (no yet...)");
 							
 							byte[] pass = server.get(m.getPublicKey(), m.getDomain(), m.getUsername());
 							Message m2 = new Message("retrieve_password", pubKey, null, null, crypto.signature_generate(pass, privKey), null, null, pass, null, null); 

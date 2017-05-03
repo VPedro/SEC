@@ -142,7 +142,12 @@ public class Library {
 	public Message createMessage(String s, byte[] domain, byte[] username, byte[] password, Long nonce) {
 		byte[] sig_d = crypto.signature_generate(domain, privKey);
 		byte[] sig_u = crypto.signature_generate(username, privKey);
-		byte[] sig_nonce = crypto.signature_generate(nonce.toString().getBytes(), privKey);
+		byte[] sig_nonce;
+		if(nonce!=null){
+			sig_nonce = crypto.signature_generate(nonce.toString().getBytes(), privKey);
+		}else{
+			sig_nonce = null;
+		}
 		byte[] p = crypto.encrypt(password, pubKey);
 		byte[] sig_p = crypto.signature_generate(p, privKey);
 		return new Message(s, pubKey, sig_d, sig_u, sig_p, domain, username, p, nonce, sig_nonce);
@@ -151,10 +156,11 @@ public class Library {
 	public void save_password(byte[] domain, byte[] username, byte[] password) throws IOException {
 
 		//
-		nextNonce = getNonce();
+		//nextNonce = getNonce();
 		byte[] hash_dom = crypto.hash_sha256(domain);
 		byte[] hash_user = crypto.hash_sha256(username);
-		Message msg = createMessage("save_password", hash_dom, hash_user, password, nextNonce);
+		Message msg = createMessage("save_password", hash_dom, hash_user, password, null);
+		//Message msg = createMessage("save_password", hash_dom, hash_user, password, nextNonce);
 		SignedMessage resMsg = null;
 		try {
 			outObject.writeObject(msg);
@@ -183,11 +189,12 @@ public class Library {
 
 	public String retrieve_password(byte[] domain, byte[] username){
 
-		nextNonce = getNonce();
+		//nextNonce = getNonce();
 
 		byte[] hash_dom = crypto.hash_sha256(domain);
 		byte[] hash_user = crypto.hash_sha256(username);
-		Message msg = createMessage("retrieve_password", hash_dom, hash_user, null, nextNonce);
+		//FIXME nonce
+		Message msg = createMessage("retrieve_password", hash_dom, hash_user, null, null);
 		Object o = null;
 		try {
 			outObject.writeObject(msg);
@@ -205,6 +212,7 @@ public class Library {
 			}
 		}
 
+		System.out.println("recebi Message (supostamente pass)...");
 		Message m = (Message)o;
 		boolean ver_p = false;
 		if(m.getPassword() != null) {
