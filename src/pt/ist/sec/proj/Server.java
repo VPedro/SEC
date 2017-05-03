@@ -31,6 +31,10 @@ public class Server {
 	boolean verbose = true;
 	static int port = 1026;
 	static int ServerID;
+	
+	private Map<PublicKey, Integer> PubKeyTS;
+	private Map<Integer, byte[]> TSValues;
+	private Map<Integer, byte[]> TSSigns;
 
 	public Server(String string) {
 		ServerID = Integer.parseInt(string);
@@ -176,6 +180,10 @@ public class Server {
 		server.nonces = new HashMap<PublicKey, Long>();
 		server.usedNonces = new ArrayList<Long>();
 		server.registeredKeys = new ArrayList<PublicKey>();
+		
+		server.PubKeyTS =  new HashMap<PublicKey, Integer>();
+		server.TSValues = new HashMap<Integer, byte[]>();
+		server.TSSigns = new HashMap<Integer, byte[]>();
 
 		KeyStore ks  = server.getKeyStore("olaola");
 		server.setKeys(ks,"server","olaola");
@@ -196,7 +204,20 @@ public class Server {
 			e.printStackTrace();
 		}
 	}
-
+	
+	public void updateTS(PublicKey pk, int ts, byte[]value, byte[] sign ){
+		//if(t
+		Integer savedTS = PubKeyTS.get(pk);
+		if(savedTS == null){
+			PubKeyTS.put(pk, ts);
+			TSValues.put(ts, value);
+			TSSigns.put(ts, sign);
+		}else if(ts > savedTS){
+			TSValues.put(ts, value);
+			TSSigns.put(ts, sign);
+		}
+	}
+	
 	PublicKey getPubKey() {
 		return pubKey;
 	}

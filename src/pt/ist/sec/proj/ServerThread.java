@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.nio.ByteBuffer;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 
@@ -27,6 +28,15 @@ public class ServerThread extends Thread {
 		this.server = server;
 	}
 	
+	public void sendAckMessage(String func, int ts){
+		AckMessage msg = new AckMessage(func, ts);
+		try {
+			objOut.writeObject(msg);
+		} catch (IOException e) {
+			System.out.println("Error sending AckMessage ");
+		}
+	}
+	
 	public void sendSignedMessage(String func, PublicKey pubKey, byte[] sign, String res, byte[] value){
 		SignedMessage msg = new SignedMessage(func,pubKey, sign, res, value, null, null);
 		try {
@@ -34,6 +44,31 @@ public class ServerThread extends Thread {
 		} catch (IOException e) {
 			System.out.println("Error sending SignedMessage ");
 		}
+	}
+	
+	public boolean validMessageSignatures(RegisterMessage m, boolean wts, boolean dom, boolean user, boolean pass, boolean nonce){
+		boolean valid0,valid1,valid2,valid3,valid4;
+		valid0=valid1=valid2=valid3=valid4= true;
+		
+		if(wts){
+			valid0 = crypto.signature_verify(m.getSignWTS(), m.getPubKey(), intToBytes(m.getWTS()));
+		}
+		if(dom){
+			valid1 = crypto.signature_verify(m.getSignDomain(), m.getPubKey(), m.getDomain());
+		}
+		if(user){
+			valid2 = crypto.signature_verify(m.getSignUsername(), m.getPubKey(), m.getUsername());
+		}
+		if(pass){
+			valid3 = crypto.signature_verify(m.getSignPassword(), m.getPubKey(), m.getPassword());
+		}
+		if(nonce){
+			//valid4 = crypto.signature_verify(m.getSig_nonce(), m.getPublicKey(), m.getNonce().toString().getBytes());
+			valid4=true;
+		}
+		//FIXME
+		
+		return valid0 & valid1 & valid2 & valid3 & valid4 ;
 	}
 	
 	public boolean validMessageSignatures(Message m, boolean dom, boolean user, boolean pass, boolean nonce){
@@ -76,22 +111,14 @@ public class ServerThread extends Thread {
 		while (connectionOpen) {
 			try {
 				input = objIn.readObject();
-				if (input instanceof Message) {
-					Message m = (Message)input;
-					SignedMessage resMsg;
-					if(!server.getRegisteredKeys().contains(m.getPublicKey())){
-						System.out.println("Please Register first!");
-						resMsg = new SignedMessage("register",pubKey,sign_pub ,"register_fail", null, null, null);
-						objOut.writeObject(resMsg);
-						continue;
-					}
-					if(m.getFunctionName().equals("save_password")){
-						if(validMessageSignatures(m,true,true,true,true)){
+				if (input instanceof RegisterMessage) {
+					RegisterMessage rcvdMsg = (RegisterMessage)input;
+					if(rcvdMsg.getFunc().equals("save_password")){
+						if(validMessageSignatures(rcvdMsg,true, true,true,true,true)){
 							if(verbose) {
-								System.out.println("Expected nonce: " + server.getNonces().get(m.getPublicKey()));
-								System.out.println("Nonce received by server: " + m.getNonce());
+								System.out.println("Aqui" );
 							}
-							Long n_compare = server.getNonces().get(m.getPublicKey());
+							//Long n_compare = server.getNonces().get(m.getPublicKey());
 							//FIXME compare nonces
 							/*if((long)n_compare != ((long)m.getNonce())){
 								System.out.println("Different Nonce, reject"); 
@@ -99,35 +126,15 @@ public class ServerThread extends Thread {
 								continue; 
 							}*/
 							System.out.println("DUP Signature verified successfully! (no yet...)");
-							server.put(m.getPublicKey(), m.getDomain(), m.getUsername(), m.getPassword());
-							sendSignedMessage("save_password", pubKey, sign_pub, "success", m.getPassword());
+							server.put(rcvdMsg.getPubKey(), rcvdMsg.getDomain(), rcvdMsg.getUsername(), rcvdMsg.getPassword());
+							
+							//FIXEME
+							server.updateTS(rcvdMsg.getPubKey(), rcvdMsg.getWTS(),rcvdMsg.getPassword(), rcvdMsg.getSignPassword());
+							sendAckMessage("save_password",rcvdMsg.getWTS());
+							//sendSignedMessage("save_password", pubKey, sign_pub, "success", m.getPassword());
 						} else {
 							System.out.println("Signature not valid!");
 							sendSignedMessage("save_password", pubKey, sign_pub, "fail", null);
-						}
-					}
-					else if(m.getFunctionName().equals("retrieve_password")){
-						if(validMessageSignatures(m, true, true, false, true)) {
-							Long n_compare = server.getNonces().get(m.getPublicKey());
-							if(verbose) {
-								System.out.println("Compare " + n_compare + " " + m.getNonce());
-							}
-							//FIXME
-							/*if((long)n_compare != (long)m.getNonce()){ 
-								System.out.println("Repeated Nonce, possible replay attack");
-								//TODO
-								sendSignedMessage("invalid", pubKey, sign_pub, "invalid message", null);
-							}*/
-							System.out.println("Signature verified successfully! (no yet...)");
-							
-							byte[] pass = server.get(m.getPublicKey(), m.getDomain(), m.getUsername());
-							Message m2 = new Message("retrieve_password", pubKey, null, null, crypto.signature_generate(pass, privKey), null, null, pass, null, null); 
-							objOut.writeObject(m2);
-						}
-						else {
-							System.out.println("Signature not valid!");
-							//TODO
-							sendSignedMessage("invalid", pubKey, sign_pub, "invalid message", null);
 						}
 					}
 				}
@@ -187,5 +194,11 @@ public class ServerThread extends Thread {
 				connectionOpen = false;
 			}
 		}
+	}
+	
+	public byte[] intToBytes( final int i ) {
+	    ByteBuffer bb = ByteBuffer.allocate(4); 
+	    bb.putInt(i); 
+	    return bb.array();
 	}
 }

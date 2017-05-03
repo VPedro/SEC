@@ -73,7 +73,7 @@ public class Library {
 		try {
 			outObject.writeObject(msg);
 			resMsg = (SignedMessage)inObject.readObject();
-
+			System.out.println("received nonce:" );
 			System.out.println(resMsg.getSignNonce() );
 			System.out.println(resMsg.getPubKey());
 			System.out.println(resMsg.getNonce().toString().getBytes("UTF-8"));
@@ -156,11 +156,10 @@ public class Library {
 	public void save_password(byte[] domain, byte[] username, byte[] password) throws IOException {
 
 		//
-		//nextNonce = getNonce();
+		nextNonce = getNonce();
 		byte[] hash_dom = crypto.hash_sha256(domain);
 		byte[] hash_user = crypto.hash_sha256(username);
-		Message msg = createMessage("save_password", hash_dom, hash_user, password, null);
-		//Message msg = createMessage("save_password", hash_dom, hash_user, password, nextNonce);
+		Message msg = createMessage("save_password", hash_dom, hash_user, password, nextNonce);
 		SignedMessage resMsg = null;
 		try {
 			outObject.writeObject(msg);

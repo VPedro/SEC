@@ -23,15 +23,16 @@ public class ServerRequestThread extends Thread {
 	private Socket server;
 	
 	private int serverPort;
-	private Message rcvMessage;
+	private RegisterMessage rcvRegisterMessage;
 	private SignedMessage rcvSignedMessage;
+	private AckMessage respMsg;
+
 	
-	ServerRequestThread(RegisterThread register, Message msg, int port) {
+	ServerRequestThread(RegisterThread register, RegisterMessage msg, int port) {
 		this.register = register;
 		this.serverPort = port;
-		this.rcvMessage = msg;
+		this.rcvRegisterMessage = msg;
 	}
-	
 	ServerRequestThread(RegisterThread register, SignedMessage msg, int port) {
 		this.register = register;
 		this.serverPort = port;
@@ -52,19 +53,19 @@ public class ServerRequestThread extends Thread {
 			serverOutputStream = new ObjectOutputStream(server.getOutputStream());
 			serverInputStream = new ObjectInputStream(server.getInputStream());
 			
-			if(rcvMessage!= null){
-				serverOutputStream.writeObject(rcvMessage);
-				
-			}else if(rcvSignedMessage != null){
+			if(rcvRegisterMessage != null)
+				serverOutputStream.writeObject(rcvRegisterMessage);
+			else if(rcvSignedMessage != null)
 				serverOutputStream.writeObject(rcvSignedMessage);
-			}
 			
 			responseMsg = serverInputStream.readObject();
 			
-			if(responseMsg instanceof SignedMessage)
+			if(responseMsg instanceof AckMessage){
+				register.response((AckMessage) responseMsg);
+			}else if(responseMsg instanceof SignedMessage){
 				register.response((SignedMessage) responseMsg);
-			else if(responseMsg instanceof Message)
-				register.response((Message) responseMsg);
+			}
+			
 			
 			
 		} catch (IOException | ClassNotFoundException e) {

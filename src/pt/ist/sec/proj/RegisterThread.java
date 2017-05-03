@@ -4,8 +4,11 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.nio.ByteBuffer;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -19,12 +22,16 @@ public class RegisterThread extends Thread {
 	private Register register;
 	private int serverPort;
 	private ServerRequestThread[] threads;
+	private int regID;
 
 	
 	static boolean verbose = true;
 	static int initialServerPort = 1026;
-	static int numServers = 3;
+	static int numServers;
 
+	static PublicKey pubKey;
+	static PrivateKey privKey;
+	byte[] sign_pub;
 
 	private ObjectInputStream objIn;
 	private ObjectOutputStream objOut;
@@ -34,6 +41,8 @@ public class RegisterThread extends Thread {
 	int count;
 	static boolean finished;
 	
+	Crypto crypto;
+	
 	/*private Socket[] clients;
 	ObjectOutputStream[] outObject;
 	ObjectInputStream[] inObject;
@@ -42,14 +51,17 @@ public class RegisterThread extends Thread {
 
 
 
-	RegisterThread(Socket socket, Register register) {
+	RegisterThread(int regID,int numServer, Socket socket, Register register) {
+		this.regID = regID;
 		this.librarysocket = socket;
 		this.register = register;
+		this.numServers = numServer;
 	}
 
 	public void run() {
 		System.out.println("FIZ CENAS");
 
+		crypto = new Crypto();
 		Object input;
 		try {
 			objIn = new ObjectInputStream(librarysocket.getInputStream());
@@ -57,11 +69,17 @@ public class RegisterThread extends Thread {
 			System.out.println("streams ok");
 			
 			threads = new ServerRequestThread[numServers];
+			
+			pubKey = register.getPubKey();
+			privKey = register.getPrivKey();
+			sign_pub = crypto.signature_generate(pubKey.getEncoded(), privKey);
 
 		} catch (IOException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
+		
+		
 
 		boolean connectionOpen = true;
 		while (connectionOpen) {
@@ -69,7 +87,10 @@ public class RegisterThread extends Thread {
 				input = objIn.readObject();
 				resAnswers = new String[numServers];
 				count = 0;
+				
 				finished=false;
+				
+				SignedMessage resSignedMsg;
 				if (input instanceof SignedMessage) {
 
 					SignedMessage m = (SignedMessage)input;
@@ -81,9 +102,32 @@ public class RegisterThread extends Thread {
 							threads[i-initialServerPort].start();
 						}						
 					}else if(m.getFunc().equals("nonce")){	
-
-						//pedir um nonce e atualizar os outros
-						new ServerRequestThread(this,m,initialServerPort).start();
+						register.setNonce(m.getPubKey());
+						Long newNonce = register.getNonce(m.getPubKey());
+						if(verbose) {
+						System.out.println("Genereated nonce: " + newNonce);
+						}
+						if(newNonce != 0){
+							byte[] sign_Nonce = crypto.signature_generate(newNonce.toString().getBytes("UTF-8"), privKey);
+							resSignedMsg = new SignedMessage("nonce",pubKey,sign_pub, "success", null, newNonce, sign_Nonce);
+							if(verbose){
+								System.out.println("GONNA SEND MY N0NCE");
+							
+								System.out.println(resSignedMsg.getSignNonce());
+								System.out.println(resSignedMsg.getPubKey());
+								System.out.println(resSignedMsg.getNonce());
+							}
+							
+							try {
+								objOut.writeObject(resSignedMsg);
+							} catch (IOException e) {
+								System.out.println("Error sending SignedMessage ");
+							}
+							
+						}else{
+							sendSignedMessage("nonce", pubKey, sign_pub, "fail", null);
+						}
+						//new ServerRequestThread(this,m,initialServerPort).start();
 						
 						/*for(int i = initialServerPort ; i<initialServerPort+numServers; i++){
 							threads[i-initialServerPort] = new ServerRequestThread(this,m,i);
@@ -97,19 +141,55 @@ public class RegisterThread extends Thread {
 					Message m = (Message)input;
 
 					if(m.getFunctionName().equals("save_password")){	
-						
-						for(int i = initialServerPort ; i<initialServerPort+numServers; i++){
-							System.out.println("save pass to server :" + i);
-							new ServerRequestThread(this,m,i).start();
-						}						
+						if(validMessageSignatures(m,true,true,true,true)){
+							if(verbose) {
+								
+								System.out.println("Expected nonce: " + register.getNonce(m.getPublicKey()));
+								System.out.println("Nonce received from library: " + m.getNonce());
+								
+							}
+							//Long n_compare = server.getNonces().get(m.getPublicKey());
+							//FIXME compare nonces
+							/*if((long)n_compare != ((long)m.getNonce())){
+								System.out.println("Different Nonce, reject"); 
+								sendSignedMessage("invalid", pubKey, sign_pub, "invalid message", null);
+								continue; 
+							}*/
+							//System.out.println("DUP Signature verified successfully! (no yet...)");
+							int tempWTS = register.getWTS();
+							byte[] signWTS = crypto.signature_generate(intToBytes(tempWTS), privKey);
+							
+							//cada getNonce recebido manda pedido para srrver e ghuarda em nonces[numServers]
+							//dentro do for para mandar o nonce respectivo
+							
+							//fazer as nossa signs
+							byte[] signDom = crypto.signature_generate(m.getDomain(), privKey);
+							byte[] signUser = crypto.signature_generate(m.getUsername(), privKey);
+							byte[] signPass = crypto.signature_generate(m.getPassword(), privKey);
+							
+							RegisterMessage msg = new RegisterMessage("save_password", pubKey, sign_pub, tempWTS, signWTS, 
+									m.getDomain(),signDom, m.getUsername(), signUser, m.getPassword(), signPass,null, null);
+
+							for(int i = initialServerPort ; i<initialServerPort+numServers; i++){
+								//get nonce
+								//sign_nonce
+								//criar msg aqui com nonce e sign respectivo
+								threads[i-initialServerPort] = new ServerRequestThread(this,msg,i);
+								threads[i-initialServerPort].start();
+							}
+						} else {
+							System.out.println("Signature not valid!");
+							//sendSignedMessage();
+							//sendRegisterMessage("save_password", pubKey, sign_pub, "fail", null);
+						}					
 					}
 					
 					else if(m.getFunctionName().equals("retrieve_password")){	
 						
-						for(int i = initialServerPort ; i<initialServerPort+numServers; i++){
+						/*for(int i = initialServerPort ; i<initialServerPort+numServers; i++){
 							System.out.println("retrieve pass to server :" + i);
 							new ServerRequestThread(this,m,i).start();
-						}						
+						}	*/					
 					}
 
 
@@ -118,6 +198,15 @@ public class RegisterThread extends Thread {
 				System.out.println("Thread killed");
 				connectionOpen = false;
 			}
+		}
+	}
+	
+	public void response(AckMessage msg){
+		count++;
+		if(count > (numServers/2)){
+			System.out.println("thread sends to lybrary saved with success");
+			sendSignedMessage("save_password", pubKey, sign_pub, "success", null);
+			count = 0;
 		}
 	}
 	
@@ -178,20 +267,8 @@ public class RegisterThread extends Thread {
 		}
 		
 		else if(msg.getFunc().equals("nonce")){
-			try {
-				register.saveNonce(msg.getPubKey(),msg.getNonce(), msg.getSignNonce());
-				count++;
-				
-				if(count==numServers){
-					System.out.println("thread sends to lybrary " + msg.getRes());
-					msg.setNonce(register.getExpectedNonce(msg.getPubKey()));
-					objOut.writeObject(msg);
-				}
-				
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+			register.setNonce(msg.getPubKey());
+			
 		}
 		
 		else if(msg.getFunc().equals("save_password")){
@@ -215,13 +292,42 @@ public class RegisterThread extends Thread {
 
 	}
 	
-	private void interruptAll() {
-		// TODO Auto-generated method stub
-		for(Thread t:threads){
-			if(!t.isInterrupted()){
-				t.interrupt();
-			}
+	public void sendSignedMessage(String func, PublicKey pubKey, byte[] sign, String res, byte[] value){
+		SignedMessage msg = new SignedMessage(func,pubKey, sign, res, value, null, null);
+		try {
+			objOut.writeObject(msg);
+		} catch (IOException e) {
+			System.out.println("Error sending SignedMessage ");
 		}
+	}
+	
+	
+	public boolean validMessageSignatures(Message m, boolean dom, boolean user, boolean pass, boolean nonce){
+		boolean valid1,valid2,valid3,valid4;
+		valid1=valid2=valid3=valid4= true;
+		
+		if(dom){
+			valid1 = crypto.signature_verify(m.getSig_domain(), m.getPublicKey(), m.getDomain());
+		}
+		if(user){
+			valid2 = crypto.signature_verify(m.getSig_username(), m.getPublicKey(), m.getUsername());
+		}
+		if(pass){
+			valid3 = crypto.signature_verify(m.getSig_password(), m.getPublicKey(), m.getPassword());
+		}
+		if(nonce){
+			//valid4 = crypto.signature_verify(m.getSig_nonce(), m.getPublicKey(), m.getNonce().toString().getBytes());
+			valid4=true;
+		}
+		//FIXME
+		
+		return valid1 & valid2 & valid3 & valid4 ;
+	}
+	
+	public byte[] intToBytes( final int i ) {
+	    ByteBuffer bb = ByteBuffer.allocate(4); 
+	    bb.putInt(i); 
+	    return bb.array();
 	}
 
 	private String endThread(String res) {
