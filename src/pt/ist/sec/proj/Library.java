@@ -155,7 +155,7 @@ public class Library {
 
 	public void save_password(byte[] domain, byte[] username, byte[] password) throws IOException {
 
-		//
+		
 		nextNonce = getNonce();
 		byte[] hash_dom = crypto.hash_sha256(domain);
 		byte[] hash_user = crypto.hash_sha256(username);
@@ -164,7 +164,9 @@ public class Library {
 		try {
 			outObject.writeObject(msg);
 			resMsg = (SignedMessage)inObject.readObject();
-
+			if(verbose)
+				System.out.println("received result" + resMsg.getRes());
+			
 			if(resMsg.getRes().equals("register_fail")){
 				System.out.println("You are not registered");
 				//return;
@@ -193,6 +195,7 @@ public class Library {
 		byte[] hash_dom = crypto.hash_sha256(domain);
 		byte[] hash_user = crypto.hash_sha256(username);
 		Message msg = createMessage("retrieve_password", hash_dom, hash_user, null, nextNonce);
+		System.out.println("sent retrieve to register");
 		Object o = null;
 		try {
 			outObject.writeObject(msg);

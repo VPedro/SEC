@@ -23,20 +23,38 @@ public class ServerRequestThread extends Thread {
 	private Socket server;
 	
 	private int serverPort;
+	private Message rcvMessage;
+	private RegisterReadMessage rcvRegisterReadMessage;
 	private RegisterMessage rcvRegisterMessage;
 	private SignedMessage rcvSignedMessage;
 	private AckMessage respMsg;
+	
+	private int myID;
 
 	
-	ServerRequestThread(RegisterThread register, RegisterMessage msg, int port) {
+	ServerRequestThread(int id, RegisterThread register, RegisterReadMessage msg, int port) {
+		this.myID = id;
+		this.register = register;
+		this.serverPort = port;
+		this.rcvRegisterReadMessage = msg;
+	}
+	ServerRequestThread(int id, RegisterThread register, RegisterMessage msg, int port) {
+		this.myID = id;
 		this.register = register;
 		this.serverPort = port;
 		this.rcvRegisterMessage = msg;
 	}
-	ServerRequestThread(RegisterThread register, SignedMessage msg, int port) {
+	ServerRequestThread(int id, RegisterThread register, SignedMessage msg, int port) {
+		this.myID = id;
 		this.register = register;
 		this.serverPort = port;
 		this.rcvSignedMessage = msg;
+	}
+	ServerRequestThread(int id, RegisterThread register, Message msg, int port) {
+		this.myID = id;
+		this.register = register;
+		this.serverPort = port;
+		this.rcvMessage = msg;
 	}
 	
 	public void run() {
@@ -53,17 +71,25 @@ public class ServerRequestThread extends Thread {
 			serverOutputStream = new ObjectOutputStream(server.getOutputStream());
 			serverInputStream = new ObjectInputStream(server.getInputStream());
 			
-			if(rcvRegisterMessage != null)
+			if(rcvMessage != null){
+				serverOutputStream.writeObject(rcvMessage);
+			}else if(rcvRegisterReadMessage != null){
+				serverOutputStream.writeObject(rcvRegisterReadMessage);
+			}else if(rcvRegisterMessage != null){
 				serverOutputStream.writeObject(rcvRegisterMessage);
-			else if(rcvSignedMessage != null)
+			}else if(rcvSignedMessage != null){
 				serverOutputStream.writeObject(rcvSignedMessage);
-			
+			}
 			responseMsg = serverInputStream.readObject();
 			
 			if(responseMsg instanceof AckMessage){
 				register.response((AckMessage) responseMsg);
 			}else if(responseMsg instanceof SignedMessage){
 				register.response((SignedMessage) responseMsg);
+			}else if(responseMsg instanceof SignedMessage){
+				register.response((Message) responseMsg);
+			}else if(responseMsg instanceof ReadResponseMessage){
+				register.response((ReadResponseMessage) responseMsg);
 			}
 			
 			

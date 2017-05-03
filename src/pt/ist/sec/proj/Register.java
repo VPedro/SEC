@@ -102,9 +102,8 @@ public class Register {
 	}
 	
 	public void updateReplaceNonces(PublicKey pk, List<Long> noncesList){
-		
+		replaceNonces.put(pk, noncesList);
 	}
-	
 	
 	
 	

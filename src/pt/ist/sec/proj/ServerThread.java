@@ -62,12 +62,12 @@ public class ServerThread extends Thread {
 		if(pass){
 			valid3 = crypto.signature_verify(m.getSignPassword(), m.getPubKey(), m.getPassword());
 		}
+		//nao precisa pq wts assinado invalida replay attacks
 		if(nonce){
 			//valid4 = crypto.signature_verify(m.getSig_nonce(), m.getPublicKey(), m.getNonce().toString().getBytes());
 			valid4=true;
 		}
-		//FIXME
-		
+			
 		return valid0 & valid1 & valid2 & valid3 & valid4 ;
 	}
 	
@@ -137,6 +137,17 @@ public class ServerThread extends Thread {
 							sendSignedMessage("save_password", pubKey, sign_pub, "fail", null);
 						}
 					}
+				}else if (input instanceof RegisterReadMessage) {
+					//TODO vcerify
+					RegisterReadMessage rcvdMsg = (RegisterReadMessage)input;
+					
+					byte[] pass = server.get(rcvdMsg.getPubKey(), rcvdMsg.getDomain(), rcvdMsg.getUsername());
+					byte[] signPass = crypto.signature_generate(pass, privKey);
+					byte[] signRID = crypto.signature_generate(intToBytes(rcvdMsg.getRID()), privKey);
+					
+					//FIXME WTS
+					ReadResponseMessage m2 = new ReadResponseMessage(pubKey, sign_pub, rcvdMsg.getRID(), signRID, 1, null, pass, signPass);
+					objOut.writeObject(m2);
 				}
 				else if(input instanceof SignedMessage) {
 					SignedMessage m = (SignedMessage)input;
