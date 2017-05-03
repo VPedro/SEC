@@ -206,7 +206,7 @@ public class Server {
 	}
 	
 	public void updateTS(PublicKey pk, int ts, byte[]value, byte[] sign ){
-		//if(t
+		
 		Integer savedTS = PubKeyTS.get(pk);
 		if(savedTS == null){
 			PubKeyTS.put(pk, ts);
