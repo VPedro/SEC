@@ -229,31 +229,19 @@ public class RegisterThread extends Thread {
 		}
 	}
 	
-	public void response(Message msg){
-		
-		if(msg.getFunctionName().equals("retrieve_password")){
-			try {
-				String end = endThread(new String(msg.getPassword()));
-				if(end == null){
-					return;
-				}
-				objOut.writeObject(msg);
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
-		
-	}
-	
 
+	//FIXME so dar erro uma vez caso msg.getRes for maioria
 	public void response(SignedMessage msg){
 		System.out.println("Response from serverRequestThread: " + msg.getRes());
 
 		if(msg.getFunc().equals("invalid")){
 			try {
-				//todo ver se maioria deu invalid
+
 				System.out.println("Invalid message");
+				String end = endThread("invalid");
+				if(end == null){
+					return;
+				}
 				objOut.writeObject(msg);
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
@@ -299,6 +287,19 @@ public class RegisterThread extends Thread {
 		}
 		//em caso de erro "register_fail" ou "invalid message"
 		else if(msg.getFunc().equals("retrieve_password")){
+			//
+			if(msg.getRes().equals("no password")){
+				System.out.println("nao recebi pass");
+				try {
+					String end = endThread(msg.getRes());
+					if(end == null){
+						return;
+					}
+					objOut.writeObject(msg);				
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
 			try {
 				String end = endThread(msg.getRes());
 				if(end == null){
@@ -351,6 +352,9 @@ public class RegisterThread extends Thread {
 
 	private String endThread(String res) {
 		// TODO Auto-generated method stub
+		if(finished)
+			return null;
+		
 		resAnswers[count] = res;
 		count++;
 		

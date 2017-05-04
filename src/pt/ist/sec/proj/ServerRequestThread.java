@@ -85,8 +85,6 @@ public class ServerRequestThread extends Thread {
 				register.response((AckMessage) responseMsg);
 			}else if(responseMsg instanceof SignedMessage){
 				register.response((SignedMessage) responseMsg);
-			}else if(responseMsg instanceof SignedMessage){
-				register.response((Message) responseMsg);
 			}else if(responseMsg instanceof ReadResponseMessage){
 				register.response((ReadResponseMessage) responseMsg);
 			}else if(responseMsg == null){

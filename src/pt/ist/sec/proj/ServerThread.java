@@ -134,7 +134,9 @@ public class ServerThread extends Thread {
 							sendSignedMessage("save_password", pubKey, sign_pub, "fail", null);
 						}
 					}
+					
 				}else if (input instanceof RegisterReadMessage) {
+					//when receives a response for retrieve pass
 					//TODO vcerify
 					RegisterReadMessage rcvdMsg = (RegisterReadMessage)input;
 					
@@ -143,7 +145,10 @@ public class ServerThread extends Thread {
 					byte[] signRID = crypto.signature_generate(intToBytes(rcvdMsg.getRID()), privKey);
 					
 					if(pass == null){
-						objOut.writeObject(null);
+						System.out.println("no pass found on sthis server");
+						//FIXME mandar so na maioria
+						SignedMessage failedMsg = new SignedMessage("retrieve_password", pubKey, sign_pub, "no password", null, null, null);
+						objOut.writeObject(failedMsg);
 					}
 					else {//FIXME WTS
 						ReadResponseMessage m2 = new ReadResponseMessage(pubKey, sign_pub, rcvdMsg.getRID(), signRID, 1, null, pass, signPass);

@@ -203,32 +203,36 @@ public class Library {
 				System.out.println("You are not registered!");
 				return "fail";
 			}else if(((SignedMessage) o).getRes().equals("invalid message")){
-				System.out.println("The message is invalid");
+				System.out.println("No password found");
+				return "fail";
+			}else if(((SignedMessage) o).getRes().equals("no password")){
+				System.out.println("No password found");
 				return "fail";
 			}
-		}
-
-		Message m = (Message)o;
-		if(m == null){
-			return null;
-		}
-		boolean ver_p = false;
-		if(m.getPassword() != null) {
-			ver_p = crypto.signature_verify(m.getSig_password(), m.getPublicKey(), m.getPassword());
-		}
-		else return null;
-		if(ver_p){ 	
-
-			byte[] b = crypto.decrypt(m.getPassword(), privKey);
-			if (b == null){return null;}
-			try {
-				System.out.println(new String(b, "UTF-8"));
-				return new String(b, "UTF-8");
-			} catch (UnsupportedEncodingException e) {
-					e.printStackTrace();
-			}
 		}else{
-			System.out.println("Password signature not valid");
+
+			Message m = (Message)o;
+			if(m == null){
+				return null;
+			}
+			boolean ver_p = false;
+			if(m.getPassword() != null) {
+				ver_p = crypto.signature_verify(m.getSig_password(), m.getPublicKey(), m.getPassword());
+			}
+			else return null;
+			if(ver_p){ 	
+	
+				byte[] b = crypto.decrypt(m.getPassword(), privKey);
+				if (b == null){return null;}
+				try {
+					System.out.println(new String(b, "UTF-8"));
+					return new String(b, "UTF-8");
+				} catch (UnsupportedEncodingException e) {
+						e.printStackTrace();
+				}
+			}else{
+				System.out.println("Password signature not valid");
+			}
 		}
 
 		return null;
