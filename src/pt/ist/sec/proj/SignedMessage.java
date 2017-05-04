@@ -6,6 +6,7 @@ import java.security.PublicKey;
 public class SignedMessage implements Serializable{
 
 	private static final long serialVersionUID = 1L;
+	private int id;
 	private String func;
 	private PublicKey pubKey;
 	private byte[] sign;
@@ -24,7 +25,13 @@ public class SignedMessage implements Serializable{
 		this.signNonce = signNonce;
 	}
 
-		
+	public void setID(int id){
+		this.id = id;
+	}
+	public int getID(){
+		return this.id;
+	}
+	
 	public String getFunc() {
 		return func;
 	}

@@ -72,10 +72,12 @@ public class Library {
 			outObject.writeObject(msg);
 			Object in = inObject.readObject();
 			if(!(in instanceof  SignedMessage)){
+				System.out.println("pedi nounce mas recebi uma outra message");
 				return 0;
 			}
 			resMsg = (SignedMessage) in;
 			//resMsg = (SignedMessage)inObject.readObject();
+			
 			boolean valid = crypto.signature_verify(resMsg.getSignNonce(), resMsg.getPubKey(), resMsg.getNonce().toString().getBytes("UTF-8"));
 			if(valid ){
 				if(resMsg.getRes().equals("fail")){

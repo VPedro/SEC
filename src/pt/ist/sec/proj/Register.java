@@ -77,10 +77,11 @@ public class Register {
 		try {
 			registerSocket = new ServerSocket(registerPort);
 			while(true){
-				System.out.println("===== New Register Thread =====");
+				int regID = getRegID(); 
+				System.out.println("===== New Register Thread ====="+regID);
 
 				Socket libraryClient = registerSocket.accept();
-				int regID = getRegID(); 
+				
 				new RegisterThread(regID,numServers, libraryClient, register).start();
 			}
 		} catch (IOException e) {

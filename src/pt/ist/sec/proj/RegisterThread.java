@@ -24,7 +24,10 @@ public class RegisterThread extends Thread {
 	private ServerRequestThread[] threads;
 	private int regID;
 	private AckMessage[] ackList;
+	
+	private Message respondRequestMsg;
 
+	private boolean updatingPass = false;
 
 	static boolean verbose = false;
 	static int initialServerPort = 1026;
@@ -82,6 +85,7 @@ public class RegisterThread extends Thread {
 
 		boolean connectionOpen = true;
 		while (connectionOpen) {
+			System.out.println("----------------------------");
 			try {
 				input = objIn.readObject();
 				ackList = new AckMessage[numServers];
@@ -156,7 +160,7 @@ public class RegisterThread extends Thread {
 
 							}
 						} else {
-							System.out.println("Signature not valid!");
+							System.out.println("Signature not valid!, should send responde");
 							//sendSignedMessage();
 							//sendRegisterMessage("save_password", pubKey, sign_pub, "fail", null);
 						}					
@@ -184,45 +188,80 @@ public class RegisterThread extends Thread {
 
 	public void response(AckMessage msg){
 		ackList[msg.getID()] = msg;
+		System.out.println("aumentei ack no ackMessage " + count);
 
 		count++;  //TODO meter lista de acks
 		if(count > (numServers/2)){
-			sendSignedMessage("save_password", pubKey, sign_pub, "success", null);
-			count = 0;
+			count=0;
+			if(msg.getFunc().equals("updated")){
+				//pode resonder
+				
+				try {
+					if(updatingPass){
+						System.out.println("responded: count= "+count);
+						objOut.writeObject(respondRequestMsg);
+						updatingPass=false;
+					}
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}	
+				return;
+			}else{
+				sendSignedMessage("save_password", pubKey, sign_pub, "success", null);
+			}
 
 		}
 	}
 
 	public void response(ReadResponseMessage msg){
-		count++; 
-		readList[msg.getID()] = msg;
-		//validate signs
-		//if sim
-		//guarda realist id,valor
-		try{
-			if(count > (numServers/2)){
-				System.out.println("recebi read response"+msg.getRID());
-				ReadResponseMessage updateMsg = null;
-				int max = 0;
-				for(ReadResponseMessage i:readList){
-					if(i != null){
-						if(i.getWTS()> max){
-							updateMsg = i;
-							max=i.getWTS();
-						}
+		System.out.println("aumentei ack no readResponde " + count);
+		if(!updatingPass){
+			count++; 
+			readList[msg.getID()] = msg;
+		}else {
+			return;
+		}
+		if(count > (numServers/2)){
+			count=0;
+			updatingPass = true;
+			System.out.println("recebi read response"+msg.getRID());
+			ReadResponseMessage updateMsg = null;
+			int max = 0;
+			for(ReadResponseMessage i:readList){
+				if(i != null){
+					if(i.getWTS()> max){
+						updateMsg = i;
+						max=i.getWTS();
 					}
 				}
-				if (updateMsg == null){
-					System.out.println("nao encontrei nehuma readlist");
-					return;
-				}
-
-				Message m2 = new Message(null, pubKey, null, null, crypto.signature_generate(updateMsg.getPassword(), privKey), null, null, updateMsg.getPassword(), null, null);
-				count = 0;
-				objOut.writeObject(m2);			
 			}
-		}catch (IOException e) {
-			//e.printStackTrace();
+			if (updateMsg == null){
+				System.out.println("nao encontrei nehuma readlist");
+				return;
+			}
+			//send to all
+			int tempWTS = register.getWTS();
+			byte[] signWTS = crypto.signature_generate(intToBytes(tempWTS), privKey);
+			byte[] signPass = crypto.signature_generate(updateMsg.getPassword(), privKey);
+			if(verbose)
+				System.out.println("este devia mandar o username = "+updateMsg.getUsername());
+			
+			RegisterMessage updateServerMsg = new RegisterMessage("updatePass", pubKey, sign_pub, tempWTS, signWTS, 
+					updateMsg.getDomain(),null, updateMsg.getUsername(), null, updateMsg.getPassword(), signPass,null, null, updateMsg.getClientPubKey());
+
+			System.out.println("updated vao comecar, count = "+count);
+			updatingPass = true;
+			//updating=true;
+			for(int i = initialServerPort ; i<initialServerPort+numServers; i++){
+				int id = i-initialServerPort;
+				threads[id] = new ServerRequestThread(id,this,updateServerMsg,i);
+				threads[id].start();
+
+			}
+			//byte[] signDom = crypto.signature_generate(m.getDomain(), privKey);
+			//byte[] signUser = crypto.signature_generate(m.getUsername(), privKey);
+			respondRequestMsg = new Message(null, pubKey, null, null, crypto.signature_generate(updateMsg.getPassword(), privKey), updateMsg.getDomain(), updateMsg.getUsername(), updateMsg.getPassword(), null, null);
 		}
 	}
 
@@ -293,15 +332,17 @@ public class RegisterThread extends Thread {
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
-			}
-			try {
-				String end = endThread(msg.getRes());
-				if(end == null){
-					return;
+			}else{
+				try {
+					String end = endThread(msg.getRes());
+					if(end == null){
+						return;
+					}
+					objOut.writeObject(msg);
+					//faz no endThreadcount=0;
+				} catch (IOException e) {
+					e.printStackTrace();
 				}
-				objOut.writeObject(msg);				
-			} catch (IOException e) {
-				e.printStackTrace();
 			}
 		}
 	}

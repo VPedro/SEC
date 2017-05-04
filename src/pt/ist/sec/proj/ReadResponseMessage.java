@@ -20,18 +20,23 @@ public class ReadResponseMessage implements Serializable{
 	private byte[] domain;
 	private byte[] username;
 	private byte[] password;
+	private PublicKey clientPubKey;
+
 	//not used yet
 	
 	public ReadResponseMessage(PublicKey pubKey, byte[] signPK, int rid, byte[] signRID, int wts, byte[] signWTS, 
-						byte[] password, byte[] signPassword) {
+						byte[] domain, byte[] username, byte[] password, byte[] signPassword, PublicKey pk) {
 		this.pubKey = pubKey;
 		this.signPK = signPK;
 		this.rid = rid;
 		this.signRID = signRID;
 		this.wts = wts;
 		this.signWTS = signWTS;
+		this.domain = domain;
+		this.username = username;
 		this.password = password;
 		this.signPassword = signPassword;
+		this.clientPubKey = pk;
 	}
 
 
@@ -51,6 +56,12 @@ public class ReadResponseMessage implements Serializable{
 	}
 	
 	
+	public PublicKey getClientPubKey() {
+		return clientPubKey;
+	}
+	public void setClientPubKey(PublicKey key) {
+		this.clientPubKey = key;
+	}
 	
 	public PublicKey getPubKey() {
 		return pubKey;

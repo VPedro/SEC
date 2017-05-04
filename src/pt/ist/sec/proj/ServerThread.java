@@ -111,7 +111,21 @@ public class ServerThread extends Thread {
 				input = objIn.readObject();
 				if (input instanceof RegisterMessage) {
 					RegisterMessage rcvdMsg = (RegisterMessage)input;
-					if(rcvdMsg.getFunc().equals("save_password")){
+					if(rcvdMsg.getFunc().equals("updatePass")){
+						//validar?
+						if (verbose){
+							System.out.println("recebi update de ClientPubKey, domain, username, pass, signpass");
+							System.out.println(rcvdMsg.getClientPubKey());
+							System.out.println(rcvdMsg.getDomain());
+							System.out.println(rcvdMsg.getUsername());
+							System.out.println(rcvdMsg.getPassword());
+							System.out.println(rcvdMsg.getSignPassword());
+						}
+						server.updateTS(rcvdMsg.getClientPubKey(), rcvdMsg.getWTS(),rcvdMsg.getDomain(), rcvdMsg.getUsername(), rcvdMsg.getPassword(), rcvdMsg.getSignPassword());
+						sendAckMessage("updated",rcvdMsg.getWTS());
+					}
+
+					else if(rcvdMsg.getFunc().equals("save_password")){
 						if(validMessageSignatures(rcvdMsg,true, true,true,true,true)){
 							System.out.println("DUP Signature verified successfully!");
 							
@@ -141,8 +155,9 @@ public class ServerThread extends Thread {
 					else {
 						//id = id do valor 
 						int ts = server.getLastTS(rcvdMsg.getClientPubKey());
+						System.out.println("mandei um readResponse, id= "+this.getId());
 
-						ReadResponseMessage m2 = new ReadResponseMessage(pubKey, sign_pub, rcvdMsg.getRID(), signRID, ts, null, pass, signPass);
+						ReadResponseMessage m2 = new ReadResponseMessage(pubKey, sign_pub, rcvdMsg.getRID(), signRID, ts, null,rcvdMsg.getDomain(),rcvdMsg.getUsername(), pass, signPass, rcvdMsg.getClientPubKey());
 						objOut.writeObject(m2);
 					}
 				}

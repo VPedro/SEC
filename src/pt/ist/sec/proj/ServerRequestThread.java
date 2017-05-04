@@ -84,18 +84,25 @@ public class ServerRequestThread extends Thread {
 			if(responseMsg instanceof AckMessage){
 				AckMessage resMsg= (AckMessage) responseMsg;
 				resMsg.setID(this.myID);
+				System.out.println("vou enviar AckMEssage");
 				register.response((AckMessage) responseMsg);
 			}
 			else if(responseMsg instanceof SignedMessage){
 				SignedMessage resMsg= (SignedMessage) responseMsg;
 				resMsg.setID(this.myID);
+				System.out.println("vou enviar SignedMessage");
 				register.response((SignedMessage) responseMsg);
 			}
 			else if(responseMsg instanceof ReadResponseMessage){
 				ReadResponseMessage resMsg= (ReadResponseMessage) responseMsg;
 				resMsg.setID(this.myID);
+				
+				System.out.println("vou enviar ReadResponseMessage");
+
 				register.response(resMsg);
 			}else if(responseMsg == null){
+				System.out.println("vou enviar null");
+
 				System.out.println("NAO DEVE ENVIAR NULL");
 				ReadResponseMessage r = null;
 				register.response(r);
