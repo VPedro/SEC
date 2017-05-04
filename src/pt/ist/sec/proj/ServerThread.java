@@ -114,8 +114,8 @@ public class ServerThread extends Thread {
 					if(rcvdMsg.getFunc().equals("save_password")){
 						if(validMessageSignatures(rcvdMsg,true, true,true,true,true)){
 							System.out.println("DUP Signature verified successfully!");
-							server.put(rcvdMsg.getClientPubKey(), rcvdMsg.getDomain(), rcvdMsg.getUsername(), rcvdMsg.getPassword());
-							server.updateTS(rcvdMsg.getClientPubKey(), rcvdMsg.getWTS(),rcvdMsg.getPassword(), rcvdMsg.getSignPassword());
+							
+							server.updateTS(rcvdMsg.getClientPubKey(), rcvdMsg.getWTS(),rcvdMsg.getDomain(), rcvdMsg.getUsername(), rcvdMsg.getPassword(), rcvdMsg.getSignPassword());
 							sendAckMessage("save_password",rcvdMsg.getWTS());
 						} else {
 							System.out.println("Signature not valid!");

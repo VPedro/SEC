@@ -206,15 +206,27 @@ public class Server {
 		}
 	}
 
-	public void updateTS(PublicKey pk, int ts, byte[]value, byte[] sign ){
+	public void updateTS(PublicKey pk, int ts, byte[] domain, byte[] username, byte[]password , byte[] signPass){
+		//TODO if(rcvdMsg.getWTS() > server.get())
+
 		Integer savedTS = PubKeyTS.get(pk);
 		if(savedTS == null){
 			PubKeyTS.put(pk, ts);
-			TSValues.put(ts, value);
-			TSSigns.put(ts, sign);
+			put(pk, domain, username, password);
+			//TSValues.put(ts, value);
+			TSSigns.put(ts, signPass);
 		}else if(ts > savedTS){
-			TSValues.put(ts, value);
-			TSSigns.put(ts, sign);
+			//TSValues.put(ts, value);
+			TSSigns.put(ts, signPass);
+			//noa repudio
+			//prova da assinada pelo cliente
+			//TSSigns.put(ts, sign);
+			
+			put(pk, domain, username, password);
+
+
+		}else{
+			System.out.println("old version, ignnored");
 		}
 	}
 

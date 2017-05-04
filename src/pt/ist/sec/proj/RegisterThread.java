@@ -185,7 +185,7 @@ public class RegisterThread extends Thread {
 	}
 
 	public void response(AckMessage msg){
-		count++;
+		count++;  //TODO meter lista de acks
 		if(count > (numServers/2)){
 			sendSignedMessage("save_password", pubKey, sign_pub, "success", null);
 			count = 0;

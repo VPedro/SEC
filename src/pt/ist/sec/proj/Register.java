@@ -77,6 +77,8 @@ public class Register {
 		try {
 			registerSocket = new ServerSocket(registerPort);
 			while(true){
+				System.out.println("===== New Register Thread =====");
+
 				Socket libraryClient = registerSocket.accept();
 				int regID = getRegID(); 
 				new RegisterThread(regID,numServers, libraryClient, register).start();
