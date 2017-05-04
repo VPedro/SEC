@@ -115,18 +115,11 @@ public class ServerThread extends Thread {
 					RegisterMessage rcvdMsg = (RegisterMessage)input;
 					if(rcvdMsg.getFunc().equals("save_password")){
 						if(validMessageSignatures(rcvdMsg,true, true,true,true,true)){
-							//Long n_compare = server.getNonces().get(m.getPublicKey());
-							//FIXME compare nonces
-							/*if((long)n_compare != ((long)m.getNonce())){
-								System.out.println("Different Nonce, reject"); 
-								sendSignedMessage("invalid", pubKey, sign_pub, "invalid message", null);
-								continue; 
-							}*/
-							System.out.println("DUP Signature verified successfully! (no yet...)");
+							System.out.println("DUP Signature verified successfully!");
 							server.put(rcvdMsg.getClientPubKey(), rcvdMsg.getDomain(), rcvdMsg.getUsername(), rcvdMsg.getPassword());
 							
 							//FIXEME
-							server.updateTS(rcvdMsg.getPubKey(), rcvdMsg.getWTS(),rcvdMsg.getPassword(), rcvdMsg.getSignPassword());
+							server.updateTS(rcvdMsg.getClientPubKey(), rcvdMsg.getWTS(),rcvdMsg.getPassword(), rcvdMsg.getSignPassword());
 							sendAckMessage("save_password",rcvdMsg.getWTS());
 							//sendSignedMessage("save_password", pubKey, sign_pub, "success", m.getPassword());
 						} else {

@@ -198,6 +198,7 @@ public class RegisterThread extends Thread {
 	}
 	
 	public void response(AckMessage msg){
+		System.out.println("------new AckMessage response");
 		count++;
 		if(count > (numServers/2)){
 			sendSignedMessage("save_password", pubKey, sign_pub, "success", null);
@@ -206,8 +207,12 @@ public class RegisterThread extends Thread {
 	}
 	
 	public void response(ReadResponseMessage msg){
+		System.out.println("------new ReadResponseMessage response");
+		
+		//FIXME nao e usado pq qnd nao tem pass vem signedMessage 
 		if(msg == null){
 			try {
+				System.out.println("mandei null ao library");
 				objOut.writeObject(null);
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
@@ -232,6 +237,7 @@ public class RegisterThread extends Thread {
 
 	//FIXME so dar erro uma vez caso msg.getRes for maioria
 	public void response(SignedMessage msg){
+		System.out.println("------new SignedMessage response");
 		System.out.println("Response from serverRequestThread: " + msg.getRes());
 
 		if(msg.getFunc().equals("invalid")){
