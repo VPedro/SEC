@@ -70,7 +70,12 @@ public class Library {
 
 		try {
 			outObject.writeObject(msg);
-			resMsg = (SignedMessage)inObject.readObject();
+			Object in = inObject.readObject();
+			if(!(in instanceof  SignedMessage)){
+				return 0;
+			}
+			resMsg = (SignedMessage) in;
+			//resMsg = (SignedMessage)inObject.readObject();
 			boolean valid = crypto.signature_verify(resMsg.getSignNonce(), resMsg.getPubKey(), resMsg.getNonce().toString().getBytes("UTF-8"));
 			if(valid ){
 				if(resMsg.getRes().equals("fail")){

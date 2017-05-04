@@ -6,12 +6,13 @@ import java.security.PublicKey;
 public class ReadResponseMessage implements Serializable{
 
 	private static final long serialVersionUID = 1L;
+	private int id;
 	private String func;
 	private PublicKey pubKey;
 	private byte[] signPK;
 	private int rid;
 	private byte[] signRID;
-	private int wts;
+	private Integer wts;
 	private byte[] signWTS;
 	private byte[] signDomain;
 	private byte[] signUsername;
@@ -31,6 +32,14 @@ public class ReadResponseMessage implements Serializable{
 		this.signWTS = signWTS;
 		this.password = password;
 		this.signPassword = signPassword;
+	}
+
+
+	public void setID(int id){
+		this.id = id;
+	}
+	public int getID(){
+		return this.id;
 	}
 
 		
@@ -75,8 +84,10 @@ public class ReadResponseMessage implements Serializable{
 	}
 	
 	
-	public int getWTS() {
-		return wts;
+	public Integer getWTS() {
+		if(wts != null)
+			return wts;
+		return null;
 	}
 
 	public void setWTS(int wts) {

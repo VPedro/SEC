@@ -47,7 +47,7 @@ public class Register {
 	/*
 	 * register implementation
 	 */
-	static int regID; //é o bonrr?
+	static int threadID; //é o bonrr?
 	static int wts;
 	SignedMessage[] ackSignedMsgs;
 	Message[] ackMsgs;
@@ -89,8 +89,8 @@ public class Register {
 	}
 	
 	public static int getRegID(){
-		regID++;
-		return regID;
+		threadID++;
+		return threadID;
 	}
 	
 	public int getWTS(){

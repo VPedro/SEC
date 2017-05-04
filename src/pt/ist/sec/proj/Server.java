@@ -205,6 +205,8 @@ public class Server {
 			e.printStackTrace();
 		}
 	}
+	
+	
 
 	public void updateTS(PublicKey pk, int ts, byte[] domain, byte[] username, byte[]password , byte[] signPass){
 		//TODO if(rcvdMsg.getWTS() > server.get())
@@ -213,11 +215,14 @@ public class Server {
 		if(savedTS == null){
 			PubKeyTS.put(pk, ts);
 			put(pk, domain, username, password);
-			//TSValues.put(ts, value);
+			TSValues.put(ts, password);
 			TSSigns.put(ts, signPass);
 		}else if(ts > savedTS){
 			//TSValues.put(ts, value);
 			TSSigns.put(ts, signPass);
+			TSValues.put(ts, password);
+			TSSigns.put(ts, signPass);
+
 			//noa repudio
 			//prova da assinada pelo cliente
 			//TSSigns.put(ts, sign);
@@ -244,6 +249,11 @@ public class Server {
 
 	public void setRegisteredKeys(List<PublicKey> registeredKeys) {
 		this.registeredKeys = registeredKeys;
+	}
+
+	public int getLastTS(PublicKey clientPubKey) {
+		return PubKeyTS.get(clientPubKey);
+		
 	}
 
 }

@@ -6,6 +6,7 @@ import java.security.PublicKey;
 public class AckMessage implements Serializable{
 
 	private static final long serialVersionUID = 1L;
+	private int id;
 	private String func;
 	private int ts;
 	//not used yet
@@ -33,4 +34,10 @@ public class AckMessage implements Serializable{
 	}
 	
 		
+	public void setID(int id){
+		this.id = id;
+	}
+	public int getID(){
+		return this.id;
+	}
 }

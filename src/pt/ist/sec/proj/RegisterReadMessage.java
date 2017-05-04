@@ -10,6 +10,7 @@ public class RegisterReadMessage implements Serializable{
 	private PublicKey pubKey;
 	private byte[] signPK;
 	private int rid;
+	private int wts;
 	private byte[] signRID;
 	private byte[] signDomain;
 	private byte[] signUsername;
@@ -34,6 +35,13 @@ public class RegisterReadMessage implements Serializable{
 		this.signUsername = sig_username;
 	}
 
+	public void setWTS(int i){
+		this.wts = i;
+	}
+	
+	public int getWTS(){
+		return this.wts;
+	}
 		
 	public String getFunc() {
 		return func;

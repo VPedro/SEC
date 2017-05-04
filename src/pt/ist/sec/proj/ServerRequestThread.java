@@ -80,13 +80,23 @@ public class ServerRequestThread extends Thread {
 			}
 			responseMsg = serverInputStream.readObject();
 
+			
 			if(responseMsg instanceof AckMessage){
+				AckMessage resMsg= (AckMessage) responseMsg;
+				resMsg.setID(this.myID);
 				register.response((AckMessage) responseMsg);
-			}else if(responseMsg instanceof SignedMessage){
+			}
+			else if(responseMsg instanceof SignedMessage){
+				SignedMessage resMsg= (SignedMessage) responseMsg;
+				resMsg.setID(this.myID);
 				register.response((SignedMessage) responseMsg);
-			}else if(responseMsg instanceof ReadResponseMessage){
-				register.response((ReadResponseMessage) responseMsg);
+			}
+			else if(responseMsg instanceof ReadResponseMessage){
+				ReadResponseMessage resMsg= (ReadResponseMessage) responseMsg;
+				resMsg.setID(this.myID);
+				register.response(resMsg);
 			}else if(responseMsg == null){
+				System.out.println("NAO DEVE ENVIAR NULL");
 				ReadResponseMessage r = null;
 				register.response(r);
 			}

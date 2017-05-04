@@ -23,7 +23,7 @@ public class RegisterThread extends Thread {
 	private int serverPort;
 	private ServerRequestThread[] threads;
 	private int regID;
-	private String[] readList;
+	private AckMessage[] ackList;
 
 
 	static boolean verbose = false;
@@ -39,6 +39,7 @@ public class RegisterThread extends Thread {
 
 	//mudar para 
 	String[] resAnswers;
+	ReadResponseMessage[] readList;
 	int count;
 	static boolean finished;
 
@@ -83,8 +84,9 @@ public class RegisterThread extends Thread {
 		while (connectionOpen) {
 			try {
 				input = objIn.readObject();
-				resAnswers = new String[numServers];
-				//FIXME fazer array read/acks/ outro qlq?
+				ackList = new AckMessage[numServers];
+				readList = new ReadResponseMessage[numServers];
+				resAnswers = new String[numServers];	
 				count = 0;
 
 				finished=false;
@@ -129,7 +131,6 @@ public class RegisterThread extends Thread {
 				else if(input instanceof Message) {
 					Message m = (Message)input;
 
-					//fazer as nossa signs
 					byte[] signDom = crypto.signature_generate(m.getDomain(), privKey);
 					byte[] signUser = crypto.signature_generate(m.getUsername(), privKey);
 
@@ -162,9 +163,6 @@ public class RegisterThread extends Thread {
 					}
 
 					else if(m.getFunctionName().equals("retrieve_password")){	
-
-						readList = new String[numServers];
-
 						int tempRID = register.getRID();
 						byte[] signRID = crypto.signature_generate(intToBytes(tempRID), privKey);
 						RegisterReadMessage msg = new RegisterReadMessage(pubKey, sign_pub, tempRID, signRID, m.getPublicKey(), m.getDomain(), m.getSig_domain(), m.getUsername(), m.getSig_username());
@@ -185,31 +183,56 @@ public class RegisterThread extends Thread {
 	}
 
 	public void response(AckMessage msg){
+		ackList[msg.getID()] = msg;
+
 		count++;  //TODO meter lista de acks
 		if(count > (numServers/2)){
 			sendSignedMessage("save_password", pubKey, sign_pub, "success", null);
 			count = 0;
+
 		}
 	}
 
 	public void response(ReadResponseMessage msg){
-		String end = endThread(new String(msg.getPassword()));
-		if(end == null){
-			return;
-		}
-		Message m2 = new Message(null, pubKey, null, null, crypto.signature_generate(msg.getPassword(), privKey), null, null, msg.getPassword(), null, null);
-		//sendSignedMessage("retrieve_password", pubKey, sign_pub, end, null);
-		try {
-			objOut.writeObject(m2);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		count++; 
+		readList[msg.getID()] = msg;
+		//validate signs
+		//if sim
+		//guarda realist id,valor
+		try{
+			if(count > (numServers/2)){
+				System.out.println("recebi read response"+msg.getRID());
+				ReadResponseMessage updateMsg = null;
+				int max = 0;
+				for(ReadResponseMessage i:readList){
+					if(i != null){
+						if(i.getWTS()> max){
+							updateMsg = i;
+							max=i.getWTS();
+						}
+					}
+				}
+				if (updateMsg == null){
+					System.out.println("nao encontrei nehuma readlist");
+					return;
+				}
+
+				Message m2 = new Message(null, pubKey, null, null, crypto.signature_generate(updateMsg.getPassword(), privKey), null, null, updateMsg.getPassword(), null, null);
+				count = 0;
+				objOut.writeObject(m2);			
+			}
+		}catch (IOException e) {
+			//e.printStackTrace();
 		}
 	}
 
 
 	//FIXME so dar erro uma vez caso msg.getRes for maioria
 	public void response(SignedMessage msg){
+
+		//FIXME guarda msg responsa 
+
+
 		System.out.println("Response from serverRequestThread: " + msg.getRes());
 
 		if(msg.getFunc().equals("invalid")){
@@ -323,7 +346,6 @@ public class RegisterThread extends Thread {
 	private String endThread(String res) {
 		if(finished)
 			return null;
-
 		resAnswers[count] = res;
 		count++;
 

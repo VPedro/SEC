@@ -138,8 +138,11 @@ public class ServerThread extends Thread {
 						SignedMessage failedMsg = new SignedMessage("retrieve_password", pubKey, sign_pub, "no password", null, null, null);
 						objOut.writeObject(failedMsg);
 					}
-					else {//FIXME WTS
-						ReadResponseMessage m2 = new ReadResponseMessage(pubKey, sign_pub, rcvdMsg.getRID(), signRID, 1, null, pass, signPass);
+					else {
+						//id = id do valor 
+						int ts = server.getLastTS(rcvdMsg.getClientPubKey());
+
+						ReadResponseMessage m2 = new ReadResponseMessage(pubKey, sign_pub, rcvdMsg.getRID(), signRID, ts, null, pass, signPass);
 						objOut.writeObject(m2);
 					}
 				}
