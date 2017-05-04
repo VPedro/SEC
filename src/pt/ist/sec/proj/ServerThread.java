@@ -123,7 +123,7 @@ public class ServerThread extends Thread {
 								continue; 
 							}*/
 							System.out.println("DUP Signature verified successfully! (no yet...)");
-							server.put(rcvdMsg.getPubKey(), rcvdMsg.getDomain(), rcvdMsg.getUsername(), rcvdMsg.getPassword());
+							server.put(rcvdMsg.getClientPubKey(), rcvdMsg.getDomain(), rcvdMsg.getUsername(), rcvdMsg.getPassword());
 							
 							//FIXEME
 							server.updateTS(rcvdMsg.getPubKey(), rcvdMsg.getWTS(),rcvdMsg.getPassword(), rcvdMsg.getSignPassword());

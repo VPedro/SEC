@@ -153,7 +153,7 @@ public class RegisterThread extends Thread {
 							byte[] signPass = crypto.signature_generate(m.getPassword(), privKey);
 							
 							RegisterMessage msg = new RegisterMessage("save_password", pubKey, sign_pub, tempWTS, signWTS, 
-									m.getDomain(),signDom, m.getUsername(), signUser, m.getPassword(), signPass,null, null);
+									m.getDomain(),signDom, m.getUsername(), signUser, m.getPassword(), signPass,null, null, m.getPublicKey());
 
 							for(int i = initialServerPort ; i<initialServerPort+numServers; i++){
 								//get nonce,sign_nonce,criar msg aqui com nonce e sign respectivo

@@ -109,10 +109,10 @@ public class Server {
 
 	public void	put(PublicKey publicKey, byte[] domain, byte[] username, byte[] password){ 
 		System.out.println("Server executed: Save_password");
-		byte[] c = new byte[pubKey.getEncoded().length + domain.length + username.length];
-		System.arraycopy(pubKey.getEncoded(), 0, c, 0, pubKey.getEncoded().length);
-		System.arraycopy(domain, 0, c, pubKey.getEncoded().length, domain.length);
-		System.arraycopy(username, 0, c, pubKey.getEncoded().length + domain.length, username.length);
+		byte[] c = new byte[publicKey.getEncoded().length + domain.length + username.length];
+		System.arraycopy(publicKey.getEncoded(), 0, c, 0, publicKey.getEncoded().length);
+		System.arraycopy(domain, 0, c, publicKey.getEncoded().length, domain.length);
+		System.arraycopy(username, 0, c, publicKey.getEncoded().length + domain.length, username.length);
 		//newPass.put(new String(c), password);
 		String key = new String(c);
 		if(newPass.get(key)==null){
@@ -124,16 +124,21 @@ public class Server {
 
 	public byte[] get(PublicKey publicKey, byte[] domain, byte[] username){
 		System.out.println("Server executed: Retrieve_password");
-		byte[] c = new byte[pubKey.getEncoded().length + domain.length + username.length];
-		System.arraycopy(pubKey.getEncoded(), 0, c, 0, pubKey.getEncoded().length);
-		System.arraycopy(domain, 0, c, pubKey.getEncoded().length, domain.length);
-		System.arraycopy(username, 0, c, pubKey.getEncoded().length + domain.length, username.length);
+		
+		byte[] c = new byte[publicKey.getEncoded().length + domain.length + username.length];
+		System.arraycopy(publicKey.getEncoded(), 0, c, 0, publicKey.getEncoded().length);
+		System.arraycopy(domain, 0, c, publicKey.getEncoded().length, domain.length);
+		System.arraycopy(username, 0, c, publicKey.getEncoded().length + domain.length, username.length);
 		List<byte[]> list = newPass.get(new String(c));
+		System.out.println("key: " + c);
 		if(list == null){
+			System.out.println("list de pass vazia:");
 			return null;
 		}
+
 		byte[] password_retrieved = newPass.get(new String(c)).get(list.size()-1);
 		if(password_retrieved != null){
+			System.out.println("value:"+ password_retrieved);
 			return password_retrieved;
 		}else {
 			return null;

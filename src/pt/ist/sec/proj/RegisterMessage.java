@@ -17,13 +17,14 @@ public class RegisterMessage implements Serializable{
 	private byte[] domain;
 	private byte[] username;
 	private byte[] password;
+	private PublicKey ClientPubKey;
 	//not used yet
 	private Long nonce;
 	private byte[] signNonce;
 	
 	public RegisterMessage(String func, PublicKey pubKey, byte[] signPK, int wts, byte[] signWTS, 
 						byte[] domain, byte[] signDomain, byte[] username, byte[] signUsername, 
-						byte[] password, byte[] signPassword, Long nonce, byte[] signNonce) {
+						byte[] password, byte[] signPassword, Long nonce, byte[] signNonce, PublicKey clientPK) {
 		this.func = func;
 		this.pubKey = pubKey;
 		this.signPK = signPK;
@@ -35,6 +36,7 @@ public class RegisterMessage implements Serializable{
 		this.signUsername = signUsername;
 		this.password = password;
 		this.signPassword = signPassword;
+		this.setClientPubKey(clientPK);
 		this.nonce = nonce;
 		this.signNonce = signNonce;
 	}
@@ -142,6 +144,15 @@ public class RegisterMessage implements Serializable{
 	}
 	public void setSignNonce(byte[] signNonce) {
 		this.signNonce = signNonce;
+	}
+
+
+	public PublicKey getClientPubKey() {
+		return ClientPubKey;
+	}
+
+	public void setClientPubKey(PublicKey clientPubKey) {
+		this.ClientPubKey = clientPubKey;
 	}
 
 
